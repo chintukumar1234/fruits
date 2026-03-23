@@ -259,7 +259,7 @@ messagingSenderId: "600134367178",
 appId: "1:600134367178:web:ea8b0daa3928c7791c8133",
 measurementId: "G-CQFS0NF7CL"
 };
-
+let userMarker = null;
 let userLat = null;
 let userLng = null;
 let targetLat = null;
@@ -379,22 +379,51 @@ const redIcon = L.icon({
   .addTo(map)
   .bindPopup(`${name}`);
 }
-// Get user location
 if (navigator.geolocation) {
-  navigator.geolocation.getCurrentPosition(
+  navigator.geolocation.watchPosition(
     function (position) {
       userLat = position.coords.latitude;
       userLng = position.coords.longitude;
-      map.setView([userLat, userLng], 19);
 
-      L.marker([userLat, userLng])
-        .addTo(map)
-        .bindPopup("You are here")
-        .openPopup();
+      console.log("Live Location:", userLat, userLng); 
+
+      // First time → create marker
+      if (!userMarker) {
+        userMarker = L.marker([userLat, userLng])
+          .addTo(map)
+          .bindPopup("You are here")
+          .openPopup();
+
+        accuracyCircle = L.circle([userLat, userLng], {
+          radius: position.coords.accuracy,
+          color: 'blue',
+          fillOpacity: 0.2
+        }).addTo(map);
+
+        map.setView([userLat, userLng], 18);
+      } 
+      // Update marker position
+      else {
+        userMarker.setLatLng([userLat, userLng]);
+        accuracyCircle.setLatLng([userLat, userLng]);
+        accuracyCircle.setRadius(position.coords.accuracy);
+
+        map.panTo([userLat, userLng]); // 🔥 follow user
+      }
     },
+    function (error) {
+      console.error("Geolocation error:", error);
+      alert("Location access denied or not working");
+    },
+    {
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      timeout: 10000
+    }
   );
+} else {
+  alert("Geolocation not supported");
 }
-
 // Sidebar functions
 window.openNav=function(x) {
   let sidenav = document.getElementById("mySidenav");
@@ -419,7 +448,6 @@ function createRiderMarker(lat, lng, riderId) {
 let routingControl = null;
 
 window.route = function (targetLat,targetlng) { 
-console.log(userLat,userLng,targetLat,targetLng);
   if (!userLat || !userLng || !targetLat || !targetLng) {
     alert("Location not ready yet!");
     return;
