@@ -260,6 +260,7 @@ appId: "1:600134367178:web:ea8b0daa3928c7791c8133",
 measurementId: "G-CQFS0NF7CL"
 };
 let userMarker = null;
+let accuracyCircle = null;
 let userLat = null;
 let userLng = null;
 let targetLat = null;
@@ -385,14 +386,11 @@ if (navigator.geolocation) {
       userLat = position.coords.latitude;
       userLng = position.coords.longitude;
 
-      console.log("Live Location:", userLat, userLng); 
-
-      // First time → create marker
+      // FIRST TIME → create both
       if (!userMarker) {
         userMarker = L.marker([userLat, userLng])
           .addTo(map)
-          .bindPopup("You are here")
-          .openPopup();
+          .bindPopup("You are here");
 
         accuracyCircle = L.circle([userLat, userLng], {
           radius: position.coords.accuracy,
@@ -402,27 +400,27 @@ if (navigator.geolocation) {
 
         map.setView([userLat, userLng], 18);
       } 
-      // Update marker position
+      // UPDATE BOTH
       else {
         userMarker.setLatLng([userLat, userLng]);
-        accuracyCircle.setLatLng([userLat, userLng]);
-        accuracyCircle.setRadius(position.coords.accuracy);
 
-        map.panTo([userLat, userLng]); // 🔥 follow user
+        if (accuracyCircle) {
+          accuracyCircle.setLatLng([userLat, userLng]);   // ✅ MOVE circle
+          accuracyCircle.setRadius(position.coords.accuracy); // ✅ UPDATE size
+        }
+
+        map.panTo([userLat, userLng]);
       }
     },
     function (error) {
-      console.error("Geolocation error:", error);
-      alert("Location access denied or not working");
+      console.error(error);
     },
     {
       enableHighAccuracy: true,
       maximumAge: 0,
-      timeout: 10000
+      timeout: 1000
     }
   );
-} else {
-  alert("Geolocation not supported");
 }
 // Sidebar functions
 window.openNav=function(x) {
