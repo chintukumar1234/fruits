@@ -277,35 +277,80 @@ document.getElementById("orderNow").addEventListener("click", function () {
         return;
     }
 
-    navigator.geolocation.getCurrentPosition(function (position) {
+    const options = {
+    enableHighAccuracy: true,   // 🔥 forces GPS when possible
+    timeout: 10000,             // wait max 10 sec
+    maximumAge: 0               // no cached location
+};
+
+const watchId = navigator.geolocation.watchPosition(
+    function (position) {
         let lat = position.coords.latitude;
         let lng = position.coords.longitude;
+        let accuracy = position.coords.accuracy; // in meters
+
+        console.log("Lat:", lat, "Lng:", lng, "Accuracy:", accuracy);
 
         if (!lat || !lng) {
-            alert("location is not found");
+            alert("Location not found");
+            return;
+        }
+
+        // Optional: only accept if accuracy is good (e.g., < 50 meters)
+        if (accuracy > 50) {
+            console.log("Waiting for better accuracy...");
             return;
         }
 
         const dict = { a: customer, b: phone, c1: lat, c2: lng };
+
         const refdata = push(ref(database, "submit"));
 
         set(refdata, dict)
         .then(() => {
             console.log("Inserted successfully");
+
             const message = `New Order
-            Name: ${customer}
-            Phone: ${phone}
-            Product: ${name}
-            Quantity: ${quantity}
-            Total: ₹ ${price * quantity}`;
+Name: ${customer}
+Phone: ${phone}
+Product: ${name}
+Quantity: ${quantity}
+Total: ₹ ${price * quantity}`;
 
             const whatsappNumber = "919576718589";
-            window.location.href ="https://wa.me/" + whatsappNumber + "?text=" + encodeURIComponent(message);
-        }).catch(() => {
+            window.location.href =
+                "https://wa.me/" + whatsappNumber +
+                "?text=" + encodeURIComponent(message);
+
+            // 🛑 Stop watching after success
+            navigator.geolocation.clearWatch(watchId);
+        })
+        .catch(() => {
             console.log("Something went wrong");
             alert("Failed to save order. Try again!");
         });
-    });
+    },
+
+    function (error) {
+        console.error(error);
+
+        switch (error.code) {
+            case error.PERMISSION_DENIED:
+                alert("User denied location access");
+                break;
+            case error.POSITION_UNAVAILABLE:
+                alert("Location unavailable");
+                break;
+            case error.TIMEOUT:
+                alert("Location request timed out");
+                break;
+            default:
+                alert("Unknown error occurred");
+        }
+    },
+
+    options
+);
 });
 updatePrice();
 </script>
