@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leaflet Map with Sidebar</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<style>
+body {
+  margin: 0;
+  font-family: "Lato", sans-serif;
+  transition: background-color .5s;
+}
+
+.sidenav {
+  height: 100%;
+  width: 0;
+  position: fixed;
+  z-index: 1000;
+  top: 0;
+  left: 0;
+  background:linear-gradient(123deg,rgb(255, 255, 255),rgb(255, 164, 193),black);
+  overflow-x: hidden;
+  transition: 0.5s;
+  padding-top: 60px;
+}
+
+.sidenav a {
+  padding: 8px 32px;
+  text-decoration: none;
+  font-size: 22px;
+  color: #818181;
+  display: block;
+}
+
+.sidenav a:hover {
+  color: #f1f1f1;
+}
+
+#map {
+  height: 100vh;
+  width: 100%;
+  transition: margin-left 0.5s;
+}
+
+.menu-btn {
+  position: absolute;
+  top: 10px;
+  left: 15px;
+  font-size: 28px;
+  cursor: pointer;
+  z-index: 1100;
+
+}
+.bar1, .bar2, .bar3 {
+  width: 30px;
+  height: 4px;
+  background-color: black;
+  margin: 6px 0;
+  transition: 0.4s;
+}
+#main {
+  transition: margin-left .5s;
+  padding: 16px;
+}
+/* Animate into X */
+.change .bar1 {
+  transform: rotate(-45deg) translate(-6px, 6px);
+}
+
+.change .bar2 {
+  opacity: 0;
+}
+
+.change .bar3 {
+  transform: rotate(45deg) translate(-6px, -6px);
+}
+.users{
+    display: block;
+    justify-content: center;
+    text-align: center;
+    align-items: center;
+    border-radius: 5px;
+    background: rgb(125, 128, 139);
+    margin: 5px 10px;
+    height: 35px;
+    color:white;
+    font-size: 20px;
+    cursor: pointer;
+    width: 100%;
+}
+label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+button{
+ justify-content: center;
+  margin: 9px 1px;
+  float: right;
+  cursor: pointer;
+  background:linear-gradient(126deg,pink,rgb(237, 56, 15),pink);
+  height:35px;
+  border-radius:5px;display: block;
+}
+.rou{
+justify-content: center;
+  margin: 9px 1px;
+  float: right;
+  cursor: pointer;
+  background:linear-gradient(126deg,pink,green,pink);
+  height:35px;
+  border-radius:5px;display: block;
+}
+.container{
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(15px);
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 300px;
+}
+
+input {
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    background: rgba(255,255,255,0.8);
+    transition: 0.3s;
+}
+
+input:focus {
+    background: white;
+    box-shadow: 0 0 8px rgba(0,0,0,0.2);
+}
+.upload-btn button {
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, #ff7a18, #ffb347);
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.upload-btn button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+#message {
+    color: #e60a0a;
+    font-size: 14px;
+    text-align: center; 
+}
+#display {
+    margin-top: 15px;
+    max-height: 150px;
+    overflow-y: auto;
+    padding: 10px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.15);
+}
+
+#display div {
+    background: rgba(255,255,255,0.9);
+    margin: 5px 0;
+    padding: 8px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+#display {
+    margin-top: 15px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 10px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Each item card */
+#display .item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255,255,255,0.9);
+    padding: 10px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+/* Image styling */
+#display img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 2px solid #fff;
+}
+
+/* Text styling */
+#display .text {
+    display: flex;
+    flex-direction: column;
+    font-size: 14px;
+    color: #333;
+}
+</style>
+</head>
+
+<body>
+<div id="mySidenav" class="sidenav">
+  <div id="display_box"></div>
+  <div id="main"></div>
+  <button onclick="upload()" style="display:flex;justify-content:center;align-items:center; width: 99%;height:45px; background:rgb(240, 205, 163);border-radius:15px;">Upload Iteams</button>
+    <button onclick="delete_items()" style="display:flex;justify-content:center;align-items:center; width: 99%;height:45px; background:rgb(240, 205, 163);border-radius:15px;">Delete Iteams</button>
+  <hr>
+  <div id="display_items"></div>
+</div>
+</div>
+<div class="menu-btn" onclick="openNav(this)">
+  <div class="bar1"></div>
+    <div class="bar2"></div>
+    <div class="bar3"></div>
+</div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<!-- Leaflet Routing Machine CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+
+<!-- Leaflet Routing Machine JS -->
+<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+import { getDatabase, ref, onValue, remove ,push ,set} from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+        
+const firebaseConfig = {
+apiKey: "AIzaSyAVWLIDjsmMcH2kfqiKwQ1-jFU6d6654pY",
+authDomain: "myproject-fdb4c.firebaseapp.com",
+databaseURL: "https://myproject-fdb4c-default-rtdb.firebaseio.com",
+projectId: "myproject-fdb4c",
+storageBucket: "myproject-fdb4c.firebasestorage.app",
+messagingSenderId: "600134367178",
+appId: "1:600134367178:web:ea8b0daa3928c7791c8133",
+measurementId: "G-CQFS0NF7CL"
+};
+
+let userLat = null;
+let userLng = null;
+let targetLat = null;
+let targetLng = null;
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+class node{
+    constructor(data,id,lat,lng){
+        this.data=data;
+        this.id=id;
+        this.lat=lat;
+        this.lng=lng;
+        this.link=null;
+    }
+}
+class linkedlist{
+    constructor(){
+        this.head=null;
+    }
+
+    addnode(value,id,lat,lng){
+        const new_node= new node(value,id,lat,lng);
+        new_node.link=null;
+        if(new_node===null){
+            console.log("The memory are not allocated");
+            return;
+        }
+         if(this.head===null){
+            new_node.link=this.head;
+            this.head=new_node;
+        }else{
+            let current=this.head;
+            while(current.link!==null){
+                current=current.link;
+            }
+            current.link=new_node;
+        }
+    }
+    
+    display(){
+    const display=document.getElementById("display_items");
+    display.innerHTML="";
+    let current=this.head;
+    while(current!=null){
+        display.innerHTML+=`<label><button onclick="route(${current.lat},${current.lng})" class="rou">Route</button>
+        <div class="users">${current.data}</div>
+        <button onclick="k('${current.id}')">
+        Delete
+      </button></label>
+            `
+        current=current.link;
+      }
+    }
+    delete(id){
+    if(this.head == null) return;
+
+    // delete head
+    if(this.head.id == id){
+      this.head = this.head.link;
+      return;
+    }
+
+    let current = this.head;
+
+    while(current.link != null && current.link.id != id){
+      current = current.link;
+    }
+
+    if(current.link != null){
+      current.link = current.link.link;
+    }
+  }
+}
+const list=new linkedlist();
+
+onValue(ref(db,"submit"),(snapshot)=>{
+  list.head=null;
+  snapshot.forEach((childs)=>{
+    const data=childs.val();
+    taget_lat_lng(data.a,data.c1,data.c2);
+    list.addnode(data.a,childs.key,data.c1,data.c2);
+  });
+  list.display();
+});
+
+window.k=function(id){
+  remove(ref(db, "submit/" + id));
+  list.delete(id);
+  list.display();
+}
+
+// Initialize map
+const map = L.map('map',{
+     zoomControl: false
+}).setView([20, 0], 2);
+
+// Tile layer
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '© OpenStreetMap'
+}).addTo(map);
+
+function taget_lat_lng(name,lat,lng){
+  targetLat = lat;
+  targetLng = lng;
+// Default marker (Eiffel Tower)
+const redIcon = L.icon({
+  iconUrl: 'https://cdn-icons-png.flaticon.com/128/9131/9131546.png',
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -32]
+});
+
+  L.marker([lat, lng], { icon: redIcon })
+  .addTo(map)
+  .bindPopup(`${name}`);
+}
+// Get user location
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(
+    function (position) {
+      userLat = position.coords.latitude;
+      userLng = position.coords.longitude;
+      map.setView([userLat, userLng], 19);
+
+      L.marker([userLat, userLng])
+        .addTo(map)
+        .bindPopup("You are here")
+        .openPopup();
+    },
+  );
+}
+
+// Sidebar functions
+window.openNav=function(x) {
+  let sidenav = document.getElementById("mySidenav");
+
+  if (sidenav.style.width === "350px") {
+    sidenav.style.width = "0";
+    document.getElementById("main").style.marginLeft = "0";
+    document.body.style.backgroundColor = "white";
+    x.classList.remove("change");
+  } else {
+    sidenav.style.width = "350px";
+    document.getElementById("main").style.marginLeft = "350px";
+    x.classList.add("change");
+  }
+}
+function createRiderMarker(lat, lng, riderId) {
+  const icon = L.icon({ iconUrl: "https://cdn-icons-png.flaticon.com/512/3448/3448339.png", iconSize: [36,36], iconAnchor:[18,36] });
+  const m = L.marker([lat || 0, lng || 0], { icon }).addTo(map).bindPopup(`Rider: ${riderId}`);
+  return m;
+}
+
+let routingControl = null;
+
+window.route = function (targetLat,targetlng) { 
+console.log(userLat,userLng,targetLat,targetLng);
+  if (!userLat || !userLng || !targetLat || !targetLng) {
+    alert("Location not ready yet!");
+    return;
+  }
+
+  // remove old route if exists
+  if (routingControl) {
+    map.removeControl(routingControl);
+  }
+
+  routingControl = L.Routing.control({
+    waypoints: [
+      L.latLng(userLat, userLng),   // ✅ user location
+      L.latLng(targetLat, targetLng) // ✅ target location
+    ],
+
+    router: L.Routing.osrmv1({
+      serviceUrl: 'https://router.project-osrm.org/route/v1',
+      profile: 'driving'
+    }),
+
+    routeWhileDragging: false,
+    addWaypoints: false,
+    draggableWaypoints: false,
+    createMarker: () => null,
+    show: false,
+
+    lineOptions: {
+      styles: [{
+        color: 'blue',
+        opacity: 0.9,
+        weight: 5
+      }]
+    }
+
+  }).addTo(map);
+
+  // zoom to route
+  const bounds = L.latLngBounds([
+    [userLat, userLng],
+    [targetLat, targetLng]
+  ]);
+
+  map.fitBounds(bounds, { padding: [50, 50] });
+}
+window.upload=function(){
+  document.getElementById("display_box").innerHTML=`
+  <div class="container">
+    <div onclick="closes()" style="cursor:pointer;">X</div>
+    <input type="file" id="images" placeholder="Enter the fruits image" accept="images/*"/>
+    <input type="text" id="names" placeholder="Enter the name" />
+    <input type="number" id="numbers" placeholder="Enter the amount" />
+    <button onclick="chintu()" class="upload-btn">Click here</button>
+    <div id="message"></div>
+    <div id="display"></div>
+    </div>
+  `;
+}
+/*--------------------------------*/
+        class nodes{
+            constructor(data){
+                this.data=data;
+                this.link=null;
+            }
+        }
+        class linkedlists{
+            constructor(){
+                this.head=null;
+            }
+            addnode(value){
+                const new_nodes=new nodes(value)
+                if(new_nodes===null){
+                    console.log("The memory are not allocated.");
+                    return;
+                }
+                if(this.head==null){
+                    new_nodes.link=this.head;
+                }
+                this.head=new_nodes
+            }
+
+            display(){
+                const display=document.getElementById("display");
+                display.innerHTML="";
+                let current=this.head;
+                while(current!=null){
+                    display.innerHTML+=`
+                    <img src=${current.data.a} alt="images"/>
+                    <div>${current.data.b}</div>
+                    <div>${current.data.c}</div>
+                    `
+                    current=current.link;
+                }
+            }
+        }
+        const lists=new linkedlists();
+/*--------------------------------*/
+window.chintu = function () {
+
+    const images = document.getElementById("images");
+    const file = images.files[0];   // ✅ correct
+    const names = document.getElementById("names").value.trim();
+    const numbers = document.getElementById("numbers").value.trim();
+
+    if (!file) {
+        document.getElementById("message").innerHTML = "Please upload image";
+    } 
+    else if (!names) {
+        document.getElementById("message").innerHTML = "Please enter name";
+    } 
+    else if (!numbers) {
+        document.getElementById("message").innerHTML = "Please enter amount";
+    } 
+    else {
+
+        // 🔥 Convert image to Base64
+        const reader = new FileReader();
+
+        reader.onload = function () {
+
+            const imageURL = reader.result;  // ✅ FIXED
+
+            const dicts = {
+                a: imageURL,
+                b: names,
+                c: numbers
+            };
+
+            // 🔥 Save to Firebase
+            const refdata = push(ref(db, 'user'));
+
+            set(refdata, dicts)
+                .then(() => {
+                    console.log("Inserted successfully");
+                })
+                .catch(() => {
+                    console.log("Something went wrong");
+                });
+
+            // 🔥 Display locally
+            lists.addnode(dicts);
+            lists.display();
+
+            // Reset
+            document.getElementById("images").value = "";
+            document.getElementById("names").value = "";
+            document.getElementById("numbers").value = "";
+            document.getElementById("message").innerHTML = "";
+        };
+
+        reader.readAsDataURL(file);  // ✅ IMPORTANT
+    }
+}
+window.closes=function() {
+  document.getElementById("display_box").style.display = "none";
+}
+window.delete_items=function(){
+document.getElementById("display_box").innerHTML=`
+  <div class="container">
+    <div onclick="closes()" style="cursor:pointer;">X</div>
+    <input type="text" id="names" placeholder="Enter the Items name" />
+    <input type="number" id="numbers" placeholder="Enter the amount" />
+    <button onclick="delete_items()" class="upload-btn">Click here</button>
+    <div id="message"></div>
+    </div>
+  `;
+}
+</script>
+</body>
+</html>
