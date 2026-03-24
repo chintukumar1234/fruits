@@ -342,7 +342,7 @@ onValue(ref(db,"submit"),(snapshot)=>{
   list.head=null;
   snapshot.forEach((childs)=>{
     const data=childs.val();
-    taget_lat_lng(data.a,data.c1,data.c2);
+    target_lat_lng(data.a,data.c1,data.c2);
     list.addnode(data.a,childs.key,data.c1,data.c2);
   });
   list.display();
@@ -365,7 +365,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap'
 }).addTo(map);
 
-function taget_lat_lng(name,lat,lng){
+function target_lat_lng(name,lat,lng){
   targetLat = lat;
   targetLng = lng;
 // Default marker (Eiffel Tower)
@@ -445,7 +445,7 @@ function createRiderMarker(lat, lng, riderId) {
 
 let routingControl = null;
 
-window.route = function (targetLat,targetlng) { 
+window.route = function (targetLat,targetLng) { 
   if (!userLat || !userLng || !targetLat || !targetLng) {
     alert("Location not ready yet!");
     return;
@@ -495,7 +495,7 @@ window.upload=function(){
   document.getElementById("display_box").innerHTML=`
   <div class="container">
     <div onclick="closes()" style="cursor:pointer;">X</div>
-    <input type="file" id="images" placeholder="Enter the fruits image" accept="images/*"/>
+    <input type="file" id="images" placeholder="Enter the fruits image" accept="image/*"/>
     <input type="text" id="names" placeholder="Enter the name" />
     <input type="number" id="numbers" placeholder="Enter the amount" />
     <button onclick="chintu()" class="upload-btn">Click here</button>
@@ -606,13 +606,48 @@ window.delete_items=function(){
 document.getElementById("display_box").innerHTML=`
   <div class="container">
     <div onclick="closes()" style="cursor:pointer;">X</div>
-    <input type="text" id="names" placeholder="Enter the Items name" />
-    <input type="number" id="numbers" placeholder="Enter the amount" />
-    <button onclick="delete_items()" class="upload-btn">Click here</button>
+    <input type="text" id="nam" placeholder="Enter the Items name" />
+    <input type="number" id="amu" placeholder="Enter the amount" />
+    <button onclick="delete_btn()" class="upload-btn">Click here</button>
     <div id="message"></div>
     </div>
   `;
 }
+
+
+window.delete_btn = function () {
+  const nam = document.getElementById("nam");
+  const amu = document.getElementById("amu");
+  if (nam.value === "") {
+    document.getElementById("message").innerHTML = "Please enter name";
+  } else if (amu.value === "") {
+    document.getElementById("message").innerHTML = "Please enter the amount";
+  } else {
+    const userRef = ref(db, "user");
+    onValue(userRef, (snapshot) => {
+      snapshot.forEach((childSnapshot) => {
+        const data = childSnapshot.val();
+
+        // assuming your data has a "name" field
+        if (data.b === nam.value) {
+
+          const key = childSnapshot.key;
+
+          // 🔥 delete that specific record
+          remove(ref(db, "user/" + key))
+            .then(() => {
+              document.getElementById("nam").value = "";
+              document.getElementById("amu").value = "";
+              document.getElementById("message").innerHTML = "Deleted successfully";
+            })
+            .catch((error) => {
+              document.getElementById("message").innerHTML = "Error: " + error;
+            });
+        }
+      });
+    });
+  }
+};
 </script>
 </body>
 </html>
