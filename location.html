@@ -629,7 +629,7 @@ window.delete_btn = function () {
         const data = childSnapshot.val();
 
         // assuming your data has a "name" field
-        if (data.b === nam.value) {
+        if (data.b === nam.value && data.c === amu.value) {
 
           const key = childSnapshot.key;
 
