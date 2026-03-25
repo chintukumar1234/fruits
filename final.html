@@ -220,7 +220,7 @@ input::placeholder{
         <input type="number" placeholder="Enter phone number" id="phone"/>
         <div id="messages" style="font-size: medium;color:red;text-align:center"></div>
         <button class="order-btn" onclick="orderNow()">Order Now</button>
-        <div id="success" style="color:green;"></div>
+        <div id="success" style="display:flex;justify-content:center;color:rgb(128, 0, 87);"></div>
     </div>
 </div>
 
@@ -270,12 +270,14 @@ input::placeholder{
     });
 
 window.orderNow=function(){
-    document.getElementById("success").innerHTML="Your order is booking";
     const customer = document.getElementById("customerName").value;
     const phone = document.getElementById("phone").value;
 
     if (customer === "" || phone === "") {
         document.getElementById("messages").innerHTML = `Please enter correct!`;
+        return;
+    }else{
+        document.getElementById("success").innerHTML="Your order is booking...";
         return;
     }
 
