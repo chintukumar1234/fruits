@@ -276,9 +276,9 @@ window.orderNow=function(){
     if (customer === "" || phone === "") {
         document.getElementById("messages").innerHTML = `Please enter correct!`;
         return;
-    }else{
-        document.getElementById("success").innerHTML="Your order is booking...";
     }
+    document.getElementById("success").innerHTML="Your order is booking...";
+    
 
     const options = {
     enableHighAccuracy: true,   // 🔥 forces GPS when possible
