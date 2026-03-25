@@ -269,7 +269,7 @@ input::placeholder{
         }
     });
 
-window.orderNow=function(){
+window.orderNow = function () {
     const customer = document.getElementById("customerName").value;
     const phone = document.getElementById("phone").value;
 
@@ -277,82 +277,51 @@ window.orderNow=function(){
         document.getElementById("messages").innerHTML = `Please enter correct!`;
         return;
     }
-    document.getElementById("success").innerHTML="Your order is booking...";
-    
+
+    document.getElementById("success").innerHTML = "Your order is booking...";
 
     const options = {
-    enableHighAccuracy: true,   // 🔥 forces GPS when possible
-    timeout: 10000,             // wait max 10 sec
-    maximumAge: 0               // no cached location
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+    };
+
+    navigator.geolocation.getCurrentPosition(
+        function (position) {
+            let lat = position.coords.latitude;
+            let lng = position.coords.longitude;
+
+            const refdata = push(ref(database, "submit"));
+            const dict = { a: customer, b: phone, c1: lat, c2: lng };
+
+            set(refdata, dict).then(() => {
+                document.getElementById("success").innerHTML = "";
+
+                const message = `New Order
+Name: ${customer}
+Phone: ${phone}
+Product: ${name}
+Quantity: ${quantity}
+Total: ₹ ${price * quantity}`;
+
+                const whatsappNumber = "919576718589";
+
+                window.location.href =
+                    "https://wa.me/" + whatsappNumber +
+                    "?text=" + encodeURIComponent(message);
+            })
+            .catch(() => {
+                alert("Failed to save order. Try again!");
+            });
+        },
+
+        function (error) {
+            alert("Location error: " + error.message);
+        },
+
+        options
+    );
 };
-
-const watchId = navigator.geolocation.watchPosition(
-    function (position) {
-        let lat = position.coords.latitude;
-        let lng = position.coords.longitude;
-        let accuracy = position.coords.accuracy; // in meters
-
-        console.log("Lat:", lat, "Lng:", lng, "Accuracy:", accuracy);
-
-        if (!lat || !lng) {
-            alert("Location not found");
-            return;
-        }
-
-        // Optional: only accept if accuracy is good (e.g., < 50 meters)
-        if (accuracy > 50) {
-            console.log("Waiting for better accuracy...");
-            return;
-        }
-
-        const refdata = push(ref(database, "submit"));
-        const dict = { a: customer, b: phone, c1: lat, c2: lng };
-        set(refdata, dict).then(() => {
-            document.getElementById("success").innerHTML="";
-            console.log("Inserted successfully");
-
-            const message = `New Order
-            Name: ${customer}
-            Phone: ${phone}
-            Product: ${name}
-            Quantity: ${quantity}
-            Total: ₹ ${price * quantity}`;
-
-            const whatsappNumber = "919576718589";
-            window.location.href =
-                "https://wa.me/" + whatsappNumber +
-                "?text=" + encodeURIComponent(message);
-
-            // 🛑 Stop watching after success
-            navigator.geolocation.clearWatch(watchId);
-        })
-        .catch(() => {
-            console.log("Something went wrong");
-            alert("Failed to save order. Try again!");
-        });
-    },
-
-    function (error) {
-        console.error(error);
-
-        switch (error.code) {
-            case error.PERMISSION_DENIED:
-                alert("User denied location access");
-                break;
-            case error.POSITION_UNAVAILABLE:
-                alert("Location unavailable");
-                break;
-            case error.TIMEOUT:
-                alert("Location request timed out");
-                break;
-            default:
-                alert("Unknown error occurred");
-        }
-    },
-
-    options
-);
-}
 updatePrice();
 </script>
 </body>
