@@ -380,6 +380,26 @@ const redIcon = L.icon({
   .addTo(map)
   .bindPopup(`${name}`);
 }
+
+const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '&copy; OpenStreetMap contributors'
+});
+
+const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+  maxZoom: 19,
+  attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics'
+});
+
+// add default
+streetLayer.addTo(map);
+
+// add layer control
+L.control.layers({
+  "Street Map": streetLayer,
+  "Satellite": satelliteLayer
+}).addTo(map);
+
 if (navigator.geolocation) {
   navigator.geolocation.watchPosition(
     function (position) {
@@ -613,7 +633,6 @@ document.getElementById("display_box").innerHTML=`
     </div>
   `;
 }
-
 
 window.delete_btn = function () {
   const nam = document.getElementById("nam");
