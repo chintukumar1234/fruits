@@ -219,7 +219,8 @@ input::placeholder{
         <input type="text" placeholder="Enter your name" id="customerName"/>
         <input type="number" placeholder="Enter phone number" id="phone"/>
         <div id="messages" style="font-size: medium;color:red;text-align:center"></div>
-        <button class="order-btn" id="orderNow">Order Now</button>
+        <button class="order-btn" onclick="orderNow()">Order Now</button>
+        <div id="success" style="color:green;"></div>
     </div>
 </div>
 
@@ -268,7 +269,8 @@ input::placeholder{
         }
     });
 
-document.getElementById("orderNow").addEventListener("click", function () {
+window.orderNow=function(){
+    document.getElementById("success").innerHTML="Your order is booking";
     const customer = document.getElementById("customerName").value;
     const phone = document.getElementById("phone").value;
 
@@ -302,20 +304,18 @@ const watchId = navigator.geolocation.watchPosition(
             return;
         }
 
-        const dict = { a: customer, b: phone, c1: lat, c2: lng };
-
         const refdata = push(ref(database, "submit"));
-
-        set(refdata, dict)
-        .then(() => {
+        const dict = { a: customer, b: phone, c1: lat, c2: lng };
+        set(refdata, dict).then(() => {
+            document.getElementById("success").innerHTML="";
             console.log("Inserted successfully");
 
             const message = `New Order
-Name: ${customer}
-Phone: ${phone}
-Product: ${name}
-Quantity: ${quantity}
-Total: ₹ ${price * quantity}`;
+            Name: ${customer}
+            Phone: ${phone}
+            Product: ${name}
+            Quantity: ${quantity}
+            Total: ₹ ${price * quantity}`;
 
             const whatsappNumber = "919576718589";
             window.location.href =
@@ -351,7 +351,7 @@ Total: ₹ ${price * quantity}`;
 
     options
 );
-});
+}
 updatePrice();
 </script>
 </body>
