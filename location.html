@@ -78,18 +78,22 @@ body {
   transform: rotate(45deg) translate(-6px, -6px);
 }
 .users{
-    display: block;
+    display: flex;
     justify-content: center;
     text-align: center;
     align-items: center;
     border-radius: 5px;
-    background: rgb(125, 128, 139);
+    background: rgb(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 2px solid rgba(225,225,225,0.3);
     margin: 5px 10px;
     height: 35px;
-    color:white;
+    color:rgb(0, 0, 0);
     font-size: 20px;
     cursor: pointer;
     width: 100%;
+    transform: translate(1px);
 }
 label {
   display: flex;
@@ -101,18 +105,22 @@ button{
   margin: 9px 1px;
   float: right;
   cursor: pointer;
-  background:linear-gradient(126deg,pink,rgb(237, 56, 15),pink);
+  background:linear-gradient(126deg,pink,rgb(237, 119, 93),pink);
   height:35px;
   border-radius:5px;display: block;
+    backdrop-filter: blur(10px);          /* blur background */
+    -webkit-backdrop-filter: blur(10px);  /* for Safari */
 }
 .rou{
 justify-content: center;
   margin: 9px 1px;
   float: right;
   cursor: pointer;
-  background:linear-gradient(126deg,pink,green,pink);
+  background:linear-gradient(126deg,pink,rgb(148, 247, 148),pink);
   height:35px;
   border-radius:5px;display: block;
+    backdrop-filter: blur(10px);          /* blur background */
+    -webkit-backdrop-filter: blur(10px);  /* for Safari */
 }
 .container{
     background: rgba(255, 255, 255, 0.1);
@@ -223,8 +231,8 @@ input:focus {
 <div id="mySidenav" class="sidenav">
   <div id="display_box"></div>
   <div id="main"></div>
-  <button onclick="upload()" style="display:flex;justify-content:center;align-items:center; width: 99%;height:45px; background:rgb(240, 205, 163);border-radius:15px;">Upload Iteams</button>
-    <button onclick="delete_items()" style="display:flex;justify-content:center;align-items:center; width: 99%;height:45px; background:rgb(240, 205, 163);border-radius:15px;">Delete Iteams</button>
+  <button onclick="upload()" style="display:flex;justify-content:center;align-items:center; width: 99%;height:45px; background:rgba(59, 58, 58, 0.19);border-radius:15px;backdrop-filter:blur(10px);-webkit-backdrop-filter: blur(10px);border:1px solid rgb(225, 218, 218)">Upload Iteams</button>
+    <button onclick="delete_items()" style="display:flex;justify-content:center;align-items:center; width: 99%;height:45px; background:rgba(59, 58, 58, 0.19);border-radius:15px;backdrop-filter:blur(10px);-webkit-backdrop-filter: blur(10px);border:1px solid rgb(255,218,218)">Delete Iteams</button>
   <hr>
   <div id="display_items"></div>
 </div>
