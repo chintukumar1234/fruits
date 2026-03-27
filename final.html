@@ -281,20 +281,46 @@ window.orderNow = function () {
     document.getElementById("success").innerHTML = "Your order is booking...";
 
     const options = {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
-    };
+    enableHighAccuracy: true,
+    timeout: 30000,
+    maximumAge: 0
+};
 
-    navigator.geolocation.getCurrentPosition(
-        function (position) {
-            let lat = position.coords.latitude;
-            let lng = position.coords.longitude;
+let bestAccuracy = Infinity;
+let bestPosition = null;
+let orderPlaced = false; // 🔒 prevent duplicate insert
+
+document.getElementById("success").innerHTML = "Getting your location...";
+
+const watchId = navigator.geolocation.watchPosition(
+
+    function (position) {
+        const accuracy = position.coords.accuracy;
+
+        console.log("Accuracy:", accuracy);
+
+        // Save best result
+        if (accuracy < bestAccuracy) {
+            bestAccuracy = accuracy;
+            bestPosition = position;
+        }
+
+        // Wait until good accuracy
+        if (accuracy < 30 && !orderPlaced) {
+            orderPlaced = true; // 🔒 lock
+
+            navigator.geolocation.clearWatch(watchId);
+
+            let lat = bestPosition.coords.latitude;
+            let lng = bestPosition.coords.longitude;
+
+            console.log("Final LatLng:", lat, lng);
 
             const refdata = push(ref(database, "submit"));
             const dict = { a: customer, b: phone, c1: lat, c2: lng };
 
             set(refdata, dict).then(() => {
+
                 document.getElementById("success").innerHTML = "";
 
                 const message = `New Order
@@ -302,7 +328,8 @@ Name: ${customer}
 Phone: ${phone}
 Product: ${name}
 Quantity: ${quantity}
-Total: ₹ ${price * quantity}`;
+Total: ₹ ${price * quantity}
+Location: https://maps.google.com/?q=${lat},${lng}`;
 
                 const whatsappNumber = "919576718589";
 
@@ -312,15 +339,17 @@ Total: ₹ ${price * quantity}`;
             })
             .catch(() => {
                 alert("Failed to save order. Try again!");
+                orderPlaced = false; // unlock if failed
             });
-        },
+        }
+    },
 
-        function (error) {
-            alert("Location error: " + error.message);
-        },
+    function (error) {
+        alert("Location error: " + error.message);
+    },
 
-        options
-    );
+    options
+);
 };
 updatePrice();
 </script>
