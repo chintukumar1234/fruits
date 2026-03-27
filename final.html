@@ -277,7 +277,7 @@ window.orderNow = function () {
         document.getElementById("messages").innerHTML = `Please enter correct!`;
         return;
     }
-
+    document.getElementById("orderBtn").disabled = true;
     document.getElementById("success").innerHTML = "Your order is booking...";
 
     const options = {
@@ -324,12 +324,11 @@ const watchId = navigator.geolocation.watchPosition(
                 document.getElementById("success").innerHTML = "";
 
                 const message = `New Order
-Name: ${customer}
-Phone: ${phone}
-Product: ${name}
-Quantity: ${quantity}
-Total: ₹ ${price * quantity}
-Location: https://maps.google.com/?q=${lat},${lng}`;
+                Name: ${customer}
+                Phone: ${phone}
+                Product: ${name}
+                Quantity: ${quantity}
+                Total: ₹ ${price * quantity}`;
 
                 const whatsappNumber = "919576718589";
 
@@ -346,6 +345,7 @@ Location: https://maps.google.com/?q=${lat},${lng}`;
 
     function (error) {
         alert("Location error: " + error.message);
+        document.getElementById("orderBtn").disabled = false;
     },
 
     options
