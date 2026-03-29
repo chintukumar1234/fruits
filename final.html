@@ -219,7 +219,7 @@ input::placeholder{
         <input type="text" placeholder="Enter your name" id="customerName"/>
         <input type="number" placeholder="Enter phone number" id="phone"/>
         <div id="messages" style="font-size: medium;color:red;text-align:center"></div>
-        <button class="order-btn" onclick="orderNow()">Order Now</button>
+        <button class="order-btn" id="orderNow">Order Now</button>
         <div id="success" style="display:flex;justify-content:center;color:rgb(128, 0, 87);"></div>
     </div>
 </div>
@@ -269,7 +269,7 @@ input::placeholder{
         }
     });
 
-window.orderNow = function () {
+document.getElementById("orderNow").addEventListener("click",function(){
     const customer = document.getElementById("customerName").value;
     const phone = document.getElementById("phone").value;
 
@@ -277,6 +277,7 @@ window.orderNow = function () {
         document.getElementById("messages").innerHTML = `Please enter correct!`;
         return;
     }
+    document.getElementById("orderNow").disabled = true; // 🔒 prevent multiple clicks
     
     document.getElementById("success").innerHTML = "Your order is booking...";
 
@@ -344,12 +345,13 @@ const watchId = navigator.geolocation.watchPosition(
     },
 
     function (error) {
+        document.getElementById("orderNow").disabled = false; // 🔒 unlock on error
         alert("Location error: " + error.message);
     },
 
     options
 );
-};
+});
 updatePrice();
 </script>
 </body>
