@@ -54,10 +54,13 @@ h1{
     box-shadow: 0 8px 25px rgba(0,0,0,0.4);
     overflow:hidden;
     transition:0.3s;
+    cursor:pointer;
 }
 
 .card:hover{
     transform: scale(1.05);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+    
 }
 
 /* Image */
@@ -83,17 +86,13 @@ h1{
     font-weight:bold;
     margin-top:5px;
 }
-
 </style>
 </head>
 <body>
 <div class="container" id="productContainer"></div>
-
 <script type="module">
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
-
 /* 🔥 Your Firebase Config */
 const firebaseConfig = {
   apiKey: "AIzaSyAVWLIDjsmMcH2kfqiKwQ1-jFU6d6654pY",
@@ -110,36 +109,26 @@ const db = getDatabase(app);
 
 const container = document.getElementById("productContainer");
 
-/* 🔥 Fetch Data from Firebase */
+/* 🔥 Fetch Data from Firebase more faster*/
 onValue(ref(db, 'user'), (snapshot) => {
     container.innerHTML = "";
-
-    snapshot.forEach((child) => {
-        const data = child.val();
-
-       container.innerHTML += `
-        <div class="card">
-            <a href="final.html?name=${encodeURIComponent(data.b)}&price=${data.c}&img=${encodeURIComponent(data.a)}">
-                <img src="${data.a}" alt="juice"/>
-            </a>
+    snapshot.forEach((childSnapshot) => {
+        const product = childSnapshot.val();
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+            <img src="${product.a}" alt="${product.name}">
             <div class="card-content">
-                <h3>${data.b}</h3>
-                <div class="price">₹ ${data.c}</div>
+                <h3>${product.b}</h3>
+                <div class="price">₹ ${product.c}</div>
             </div>
-        </div>
         `;
+        card.addEventListener("click", () => {
+            window.location.href = `final.html?name=${encodeURIComponent(product.b)}&price=${product.c}&img=${encodeURIComponent(product.a)}`;
+        });
+        container.appendChild(card);
     });
 });
-
-/* 🟢 WhatsApp Order Function */
-window.orderNow = function(name, price){
-    const phone = "91XXXXXXXXXX"; // 👉 put your number
-    const message = `Hello, I want to order ${name} for ₹${price}`;
-    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-    window.open(url, "_blank");
-}
-
 </script>
-
 </body>
 </html>
