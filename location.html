@@ -256,6 +256,65 @@ body {
 
 /* ── MAP CUSTOM ── */
 .leaflet-container { background: #0d1117 !important; }
+/* ── MOBILE RESPONSIVE ── */
+@media (max-width: 768px) {
+
+  :root {
+    --sidebar-w: 85%; /* sidebar becomes % instead of fixed */
+  }
+
+  body {
+    overflow: auto; /* allow scrolling on mobile */
+  }
+
+  /* Sidebar full overlay style */
+  .sidenav {
+    width: 0;
+  }
+
+  .sidenav.open {
+    width: var(--sidebar-w);
+  }
+
+  /* Map should NOT shift on mobile */
+  #map {
+    margin-left: 0 !important;
+  }
+
+  /* Bigger touch targets */
+  .action-btn {
+    height: 44px;
+    font-size: 14px;
+  }
+
+  .icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Modal scaling */
+  .modal {
+    width: 90%;
+    padding: 20px;
+  }
+
+  /* Menu button spacing */
+  .menu-btn {
+    top: 12px;
+    left: 12px;
+    width: 42px;
+    height: 42px;
+  }
+
+  /* Delivery cards spacing */
+  .delivery-card {
+    padding: 14px;
+  }
+
+  .delivery-name {
+    font-size: 15px;
+  }
+}
 </style>
 </head>
 <body>
