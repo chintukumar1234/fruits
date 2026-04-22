@@ -370,11 +370,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-const params = new URLSearchParams(window.location.search);
+const p = JSON.parse(sessionStorage.getItem("selectedProduct"));
 let qty = 1;
-const name  = params.get("name")  || "Product";
-const price = Number(params.get("price")) || 0;
-const img   = params.get("img")   || "";
+const name= p ? p.b : "Unknown Product";
+const price = p ? p.c : 0;
+const img = p ? p.a : "https://via.placeholder.com/400x300?text=No+Image";
+
 
 document.getElementById("img").src = img;
 document.getElementById("productName").textContent = name;

@@ -347,9 +347,10 @@ function renderCards(products) {
       showToast(`${p.b} added to cart 🛒`);
     });
 
-    card.addEventListener("click", () => {
-      window.location.href = `final.html?name=${encodeURIComponent(p.b)}&price=${p.c}&img=${encodeURIComponent(p.a)}`;
-    });
+   card.addEventListener("click", () => {
+  sessionStorage.setItem("selectedProduct", JSON.stringify(p));
+  window.location.href = `final.html`;
+});
 
     container.appendChild(card);
   });
