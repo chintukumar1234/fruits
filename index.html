@@ -38,7 +38,8 @@ body {
   line-height: 1.7;
   transition: background var(--transition), color var(--transition);
   overflow-x: hidden;
-  cursor:none;
+  cursor: none;
+  margin: 0;
 }
 
 /* ── BG BLOBS ── */
@@ -645,6 +646,7 @@ footer a { color:var(--green); text-decoration:none; }
         transform:translate(-50%, -50%);
         box-shadow: 0 0 20px lime;
         z-index:9999;
+        transform: translate(-50%, -50%);
     }
     /* Smooth Ring */
     .ring{
@@ -1115,12 +1117,12 @@ function addtocard() { showToast('Redirecting to shop…'); }
     document.body.appendChild(ring);
 
     // Mouse positions
-    let mouseX = 0;
-    let mouseY = 0;
+    let mouseX = window.innerWidth/2;
+    let mouseY = window.innerHeight/2;
 
     // Current ring position
-    let ringX = 0;
-    let ringY = 0;
+    let ringX = mouseX;
+    let ringY = mouseY;
 
     // Track mouse
     document.addEventListener("mousemove", (e) => {
