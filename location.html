@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MapTrack — HD Live Delivery Map</title>
+<script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
@@ -17,14 +18,35 @@
   --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
   --accent:#00d4ff; --accent2:#00ff88; --danger:#ff4d6d; --warn:#ffb020; --purple:#a78bfa;
   --text:#e8edf2; --muted:#5a6878; --muted2:#8899aa;
-  --sidebar-w:330px; --ease:cubic-bezier(0.4,0,0.2,1);
-  --radius:12px; --radius-sm:8px;
+  --sidebar-w:280px; --ease:cubic-bezier(0.4,0,0.2,1);
+  --radius:12px; --radius-sm:8px; --header-h:64px;
 }
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh;}
 
-/* ── MAP ── */
-#map{height:100vh;width:100%;transition:margin-left .45s var(--ease);}
+/* ── APP SHELL (sidebar + header layout) ── */
+.app-shell{display:flex;align-items:stretch;height:100vh;width:100%;}
+
+.app-sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:width .35s var(--ease),min-width .35s var(--ease);}
+.app-sidebar.collapsed{width:0;min-width:0;border-right:none;}
+.sidebar-inner{width:var(--sidebar-w);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+.app-main{flex:1;min-width:0;height:100vh;display:flex;flex-direction:column;position:relative;}
+
+.app-header{height:var(--header-h);min-height:var(--header-h);display:flex;align-items:center;gap:14px;padding:0 18px;background:var(--surface);border-bottom:1px solid var(--border);z-index:950;}
+.app-header h1{font-family:'Space Mono',monospace;font-size:15px;font-weight:700;letter-spacing:.5px;color:var(--text);}
+.app-header h1 span{color:var(--accent);}
+.header-right{display:flex;align-items:center;gap:8px;margin-left:auto;}
+.header-icon-btn{width:38px;height:38px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--surface2);color:var(--muted2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;position:relative;}
+.header-icon-btn:hover{border-color:var(--accent);color:var(--accent);}
+.header-icon-btn.active{border-color:var(--accent2);color:var(--accent2);background:rgba(0,255,136,.08);}
+.header-icon-btn .ctrl-tooltip{position:absolute;top:44px;right:0;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:4px 10px;font-size:11px;white-space:nowrap;pointer-events:none;opacity:0;transition:.2s;}
+.header-icon-btn:hover .ctrl-tooltip{opacity:1;}
+.sidebar-toggle-btn{width:36px;height:36px;border-radius:var(--radius-sm);background:none;border:1px solid var(--border2);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text);transition:.2s;flex-shrink:0;}
+.sidebar-toggle-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+.map-wrap{position:relative;flex:1;min-height:0;}
+#map{height:100%;width:100%;}
 .leaflet-container{background:#0d1117!important;}
 .leaflet-routing-container{display:none!important;}
 .leaflet-control-zoom{border:none!important;box-shadow:0 4px 20px rgba(0,0,0,.5)!important;}
@@ -32,26 +54,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);ove
 .leaflet-control-zoom a:hover{background:var(--surface2)!important;color:var(--accent)!important;}
 .leaflet-control-layers{background:var(--surface)!important;border:1px solid var(--border2)!important;color:var(--text)!important;border-radius:var(--radius)!important;box-shadow:0 4px 20px rgba(0,0,0,.4)!important;}
 .leaflet-control-layers label{color:var(--text)!important;font-family:'DM Sans',sans-serif!important;font-size:13px!important;}
-.leaflet-control-minimap{border:2px solid var(--border2)!important;border-radius:var(--radius-sm)!important;box-shadow:0 4px 20px rgba(0,0,0,.5)!important;}
 
 /* Cluster styles */
 .marker-cluster-small,.marker-cluster-medium,.marker-cluster-large{background:rgba(0,212,255,.15)!important;}
 .marker-cluster-small div,.marker-cluster-medium div,.marker-cluster-large div{
   background:rgba(0,212,255,.35)!important;color:#fff!important;font-family:'DM Sans',sans-serif!important;font-weight:600!important;font-size:13px!important;}
 
-/* ── HAMBURGER ── */
-.menu-btn{position:fixed;top:16px;left:16px;z-index:1100;width:44px;height:44px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--border2);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;transition:.2s;box-shadow:0 4px 20px rgba(0,0,0,.5);}
-.menu-btn:hover{border-color:var(--accent);box-shadow:0 4px 20px rgba(0,212,255,.2);}
-.bar{width:18px;height:2px;background:var(--text);border-radius:2px;transition:.35s var(--ease);}
-.menu-btn.open .bar:nth-child(1){transform:rotate(45deg) translate(4px,5px);}
-.menu-btn.open .bar:nth-child(2){opacity:0;transform:scaleX(0);}
-.menu-btn.open .bar:nth-child(3){transform:rotate(-45deg) translate(4px,-5px);}
-
-/* ── SIDEBAR ── */
-.sidenav{height:100vh;width:0;position:fixed;z-index:1000;top:0;left:0;background:var(--surface);overflow:hidden;transition:width .45s var(--ease);border-right:1px solid var(--border);display:flex;flex-direction:column;}
-.sidenav.open{width:var(--sidebar-w);}
-.sidebar-header{padding:20px 18px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;min-width:var(--sidebar-w);}
-.sidebar-logo{font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:var(--accent);letter-spacing:1px;white-space:nowrap;}
+/* ── SIDEBAR HEADER (logo) ── */
+.sidebar-header{padding:18px 16px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.sidebar-logo{font-family:'Space Mono',monospace;font-size:15px;font-weight:700;color:var(--accent);letter-spacing:1px;white-space:nowrap;}
 .sidebar-logo span{color:var(--accent2);}
 .refresh-btn{margin-left:auto;flex-shrink:0;display:flex;align-items:center;gap:5px;height:30px;padding:0 10px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--surface2);color:var(--muted2);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;cursor:pointer;letter-spacing:.5px;text-transform:uppercase;transition:.2s;white-space:nowrap;}
 .refresh-btn:hover{border-color:var(--accent);color:var(--accent);}
@@ -59,7 +70,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);ove
 .refresh-btn.spinning svg{transform:rotate(360deg);}
 
 /* ── GEOCODE SEARCH BAR (Google Maps style) ── */
-.geocode-bar{padding:12px 14px 8px;border-bottom:1px solid var(--border);min-width:var(--sidebar-w);}
+.geocode-bar{padding:14px 16px 8px;border-bottom:1px solid var(--border);}
 .geocode-wrap{position:relative;display:flex;align-items:center;gap:8px;}
 .geocode-input{flex:1;height:40px;border-radius:20px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--text);padding:0 40px 0 16px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:.2s;}
 .geocode-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,212,255,.08);}
@@ -74,14 +85,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);ove
 .geocode-item svg{flex-shrink:0;color:var(--muted);}
 
 /* ── LAYER SWITCHER ── */
-.layer-bar{display:flex;gap:6px;padding:10px 14px;border-bottom:1px solid var(--border);min-width:var(--sidebar-w);overflow-x:auto;}
+.layer-bar{display:flex;gap:6px;padding:10px 16px;border-bottom:1px solid var(--border);overflow-x:auto;}
 .layer-bar::-webkit-scrollbar{display:none;}
 .ltab{font-size:11px;font-weight:600;letter-spacing:.3px;padding:5px 12px;border-radius:16px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;transition:.2s;white-space:nowrap;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px;}
 .ltab.active{background:rgba(0,212,255,.1);border-color:var(--accent);color:var(--accent);}
 .ltab:hover:not(.active){border-color:var(--border2);color:var(--text);}
 
-/* ── ACTIONS ── */
-.sidebar-actions{display:flex;gap:6px;padding:10px 14px;border-bottom:1px solid var(--border);min-width:var(--sidebar-w);flex-wrap:wrap;}
+/* ── ACTIONS (nav-style rows, like sidebar nav items) ── */
+.sidebar-nav{padding:10px 12px;border-bottom:1px solid var(--border);}
+.sidebar-nav-grid{display:flex;gap:6px;flex-wrap:wrap;}
 .action-btn{flex:1;min-width:56px;height:36px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:.2s;white-space:nowrap;}
 .action-btn:hover{border-color:var(--accent);background:rgba(0,212,255,.06);transform:translateY(-1px);}
 .action-btn.danger:hover{border-color:var(--danger);background:rgba(255,77,109,.06);}
@@ -91,7 +103,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);ove
 .action-btn svg{flex-shrink:0;}
 
 /* ── SEARCH ── */
-.sidebar-search{padding:8px 12px 4px;min-width:var(--sidebar-w);}
+.sidebar-search{padding:8px 12px 4px;}
 .search-wrap{position:relative;}
 .search-wrap input{width:100%;height:36px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface2);color:var(--text);padding:0 12px 0 32px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:.2s;}
 .search-wrap input:focus{border-color:var(--accent);}
@@ -99,14 +111,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);ove
 .search-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;}
 
 /* ── FILTER TABS ── */
-.filter-tabs{display:flex;gap:5px;padding:6px 12px 8px;min-width:var(--sidebar-w);border-bottom:1px solid var(--border);overflow-x:auto;}
+.filter-tabs{display:flex;gap:5px;padding:6px 12px 8px;border-bottom:1px solid var(--border);overflow-x:auto;}
 .filter-tabs::-webkit-scrollbar{display:none;}
 .ftab{font-size:11px;font-weight:600;letter-spacing:.5px;padding:4px 10px;border-radius:16px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;transition:.2s;white-space:nowrap;flex-shrink:0;font-family:'DM Sans',sans-serif;}
 .ftab.active{background:rgba(0,212,255,.1);border-color:var(--accent);color:var(--accent);}
 .ftab:hover:not(.active){border-color:var(--border2);color:var(--text);}
 
 /* ── NEARBY BAR ── */
-.nearby-bar{display:none;flex-direction:column;gap:8px;padding:10px 14px 12px;border-bottom:1px solid var(--border);min-width:var(--sidebar-w);}
+.nearby-bar{display:none;flex-direction:column;gap:8px;padding:10px 16px 12px;border-bottom:1px solid var(--border);}
 .nearby-bar.visible{display:flex;}
 .nearby-bar-top{display:flex;align-items:center;justify-content:space-between;}
 .nearby-bar-title{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
@@ -120,9 +132,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);ove
 .nearby-info .n-count{font-family:'Space Mono',monospace;color:var(--accent2);font-weight:700;}
 
 /* ── LIST ── */
-.sidebar-list-label{padding:12px 16px 6px;font-size:10px;font-weight:600;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;min-width:var(--sidebar-w);display:flex;align-items:center;justify-content:space-between;}
+.sidebar-list-label{padding:12px 16px 6px;font-size:10px;font-weight:600;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}
 .list-count-badge{font-family:'Space Mono',monospace;font-size:10px;color:var(--accent);background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.15);border-radius:12px;padding:2px 7px;}
-#display_items{flex:1;overflow-y:auto;padding:4px 10px 12px;display:flex;flex-direction:column;gap:6px;min-width:var(--sidebar-w);}
+#display_items{flex:1;overflow-y:auto;padding:4px 10px 12px;display:flex;flex-direction:column;gap:6px;}
 #display_items::-webkit-scrollbar{width:4px;}
 #display_items::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
 
@@ -141,16 +153,33 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);ove
 .empty-state{padding:32px 16px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;}
 .empty-state p{font-size:12px;color:var(--muted);line-height:1.6;}
 
-/* ── MAP OVERLAY CONTROLS ── */
-.map-controls{position:fixed;top:16px;right:16px;z-index:900;display:flex;flex-direction:column;gap:8px;}
+/* ── SIDEBAR FOOTER (profile row) ── */
+.sidebar-footer{padding:12px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.sidebar-footer .gps-dot{width:10px;height:10px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+.sidebar-footer .gps-dot.live{background:var(--accent2);box-shadow:0 0 0 4px rgba(0,255,136,.18);}
+.sidebar-footer .gps-text{font-size:12px;color:var(--muted2);}
+.sidebar-footer .gps-sub{font-size:10px;color:var(--muted);}
+
+/* ── MAP OVERLAY CONTROLS (secondary, floating on map) ── */
+.map-controls{position:absolute;top:16px;right:16px;z-index:900;display:flex;flex-direction:column;gap:8px;}
 .map-ctrl-btn{width:40px;height:40px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--border2);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text);transition:.2s;box-shadow:0 4px 16px rgba(0,0,0,.4);}
 .map-ctrl-btn:hover{border-color:var(--accent);color:var(--accent);}
 .map-ctrl-btn.active{border-color:var(--accent2);color:var(--accent2);background:rgba(0,255,136,.08);}
 .ctrl-tooltip{position:absolute;right:48px;top:50%;transform:translateY(-50%);background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:4px 10px;font-size:12px;white-space:nowrap;pointer-events:none;opacity:0;transition:.2s;}
 .map-ctrl-btn:hover .ctrl-tooltip{opacity:1;}
 
+/* Click-to-add banner */
+.click-add-banner{position:absolute;top:16px;left:50%;transform:translateX(-50%);background:rgba(0,255,136,.12);border:1px solid var(--accent2);border-radius:30px;padding:7px 18px;font-size:12px;color:var(--accent2);z-index:900;display:none;animation:slide-down .3s var(--ease);white-space:nowrap;font-weight:600;letter-spacing:.3px;}
+.click-add-banner.visible{display:block;}
+@keyframes slide-down{from{opacity:0;transform:translateX(-50%) translateY(-12px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
+
+/* Heatmap legend */
+.heat-legend{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border2);border-radius:30px;padding:6px 16px;display:none;align-items:center;gap:10px;z-index:850;font-size:11px;color:var(--muted);box-shadow:0 4px 16px rgba(0,0,0,.4);}
+.heat-legend.visible{display:flex;}
+.heat-grad{width:80px;height:8px;border-radius:4px;background:linear-gradient(to right,blue,cyan,lime,yellow,red);}
+
 /* ── INFO PANEL (Google Maps side info) ── */
-.info-panel{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:900;background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:16px 20px;min-width:300px;max-width:420px;box-shadow:0 8px 40px rgba(0,0,0,.6);display:none;animation:slide-up .3s var(--ease);}
+.info-panel{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);z-index:900;background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:16px 20px;min-width:300px;max-width:420px;box-shadow:0 8px 40px rgba(0,0,0,.6);display:none;animation:slide-up .3s var(--ease);}
 .info-panel.visible{display:block;}
 .info-panel-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px;}
 .info-pin-name{font-size:16px;font-weight:600;color:var(--text);}
@@ -167,7 +196,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);ove
 .info-act-btn.primary:hover{opacity:.9;}
 
 /* ── ROUTE STEPS PANEL ── */
-.steps-panel{position:fixed;bottom:20px;right:16px;z-index:900;background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:0;width:180px;max-height:160px;box-shadow:0 8px 40px rgba(0,0,0,.6);display:none;flex-direction:column;overflow:hidden;}
+.steps-panel{position:absolute;bottom:20px;right:16px;z-index:900;background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:0;width:180px;max-height:160px;box-shadow:0 8px 40px rgba(0,0,0,.6);display:none;flex-direction:column;overflow:hidden;}
 .steps-panel.visible{display:flex;animation:slide-in-right .3s var(--ease);}
 @keyframes slide-in-right{from{opacity:0;transform:translateX(20px);}to{opacity:1;transform:translateX(0);}}
 .steps-header{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
@@ -188,7 +217,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);ove
 .step-dist{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px;}
 
 /* ── ROUTE BAR ── */
-.route-bar{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(15,20,28,.96);backdrop-filter:blur(12px);border:1px solid var(--accent2);border-radius:50px;padding:8px 20px;display:none;align-items:center;gap:14px;z-index:900;box-shadow:0 6px 28px rgba(0,255,136,.15);font-size:13px;white-space:nowrap;}
+.route-bar{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(15,20,28,.96);backdrop-filter:blur(12px);border:1px solid var(--accent2);border-radius:50px;padding:8px 20px;display:none;align-items:center;gap:14px;z-index:900;box-shadow:0 6px 28px rgba(0,255,136,.15);font-size:13px;white-space:nowrap;}
 .route-bar.visible{display:flex;animation:slide-up .3s var(--ease);}
 @keyframes slide-up{from{opacity:0;transform:translateX(-50%) translateY(12px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
 .route-bar-stat{display:flex;flex-direction:column;align-items:center;gap:1px;}
@@ -266,17 +295,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);ove
 .loading-bar.active{display:block;animation:load-bar 1.2s ease infinite;}
 @keyframes load-bar{0%{transform:scaleX(0) translateX(0);}50%{transform:scaleX(.7) translateX(30%);}100%{transform:scaleX(0) translateX(100%);}}
 
-/* ── HEATMAP LEGEND ── */
-.heat-legend{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border2);border-radius:30px;padding:6px 16px;display:none;align-items:center;gap:10px;z-index:850;font-size:11px;color:var(--muted);box-shadow:0 4px 16px rgba(0,0,0,.4);}
-.heat-legend.visible{display:flex;}
-.heat-grad{width:80px;height:8px;border-radius:4px;background:linear-gradient(to right,blue,cyan,lime,yellow,red);}
-
-/* ── CLICK-TO-ADD BANNER ── */
-.click-add-banner{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:rgba(0,255,136,.12);border:1px solid var(--accent2);border-radius:30px;padding:7px 18px;font-size:12px;color:var(--accent2);z-index:900;display:none;animation:slide-down .3s var(--ease);white-space:nowrap;font-weight:600;letter-spacing:.3px;}
-.click-add-banner.visible{display:block;}
-@keyframes slide-down{from{opacity:0;transform:translateX(-50%) translateY(-12px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
-
-
 /* ── CATEGORY STYLES ── */
 .cat-dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .cat-badge{font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;letter-spacing:.3px;white-space:nowrap;}
@@ -306,7 +324,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);ove
 .color-swatch-opt:hover,.color-swatch-opt.sel{border-color:#fff;transform:scale(1.15);}
 
 /* group filter tabs */
-.group-filter-bar{padding:6px 12px 8px;min-width:var(--sidebar-w);border-bottom:1px solid var(--border);overflow-x:auto;display:flex;gap:5px;}
+.group-filter-bar{padding:6px 12px 8px;border-bottom:1px solid var(--border);overflow-x:auto;display:flex;gap:5px;flex-wrap:wrap;}
 .group-filter-bar::-webkit-scrollbar{display:none;}
 .gftab{font-size:11px;font-weight:600;padding:3px 10px;border-radius:14px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;transition:.2s;white-space:nowrap;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px;flex-shrink:0;}
 .gftab.active{border-color:currentColor;}
@@ -324,11 +342,48 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);ove
 .add-point-modal .modal-title{color:var(--accent2);margin-bottom:0;}
 .coord-display{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted2);background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;letter-spacing:.5px;}
 
-@media(max-width:768px){
-  :root{--sidebar-w:88%;}
+/* ── MOBILE RESPONSIVE ── */
+@media(max-width:900px){
   body{overflow:auto;}
-  #map{margin-left:0!important;}
-  .steps-panel{right:8px;width:240px;}
+
+  /* Sidebar becomes a full-height overlay drawer, collapsed by default */
+  .app-sidebar{position:fixed;top:0;left:0;height:100vh;z-index:1300;box-shadow:0 0 40px rgba(0,0,0,.6);width:0;min-width:0;}
+  .app-sidebar.mobile-open{width:88vw;max-width:340px;min-width:0;}
+  .sidebar-inner{width:88vw;max-width:340px;}
+
+  /* Scrim behind the drawer when open */
+  .sidebar-scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1250;}
+  .sidebar-scrim.visible{display:block;}
+
+  .app-main{width:100vw;}
+
+  .app-header{padding:0 10px;gap:8px;}
+  .app-header h1{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .header-right{gap:5px;}
+  .header-icon-btn{width:34px;height:34px;}
+  .header-icon-btn .ctrl-tooltip{display:none;}
+
+  .map-controls{top:10px;right:10px;}
+  .map-ctrl-btn{width:34px;height:34px;}
+
+  /* Floating panels resize / reposition for small viewports */
+  .info-panel{left:8px;right:8px;bottom:12px;transform:none;min-width:0;max-width:none;padding:14px 16px;}
+  .route-bar{left:8px;right:8px;transform:none;bottom:12px;flex-wrap:wrap;justify-content:center;border-radius:20px;padding:10px 14px;}
+  .steps-panel{right:8px;left:8px;width:auto;max-height:34vh;bottom:12px;top:auto;}
+  .measure-modal,.modal,.cat-modal,.add-point-modal,.pay-modal{width:92vw;max-width:360px;padding:18px;}
+  #measureFloatBar{left:8px;right:8px;transform:none;width:auto;justify-content:center;flex-wrap:wrap;gap:8px;padding:8px 12px;top:10px;}
+  .click-add-banner{left:8px;right:8px;transform:none;width:auto;text-align:center;font-size:11px;white-space:normal;top:10px;}
+  .heat-legend{left:8px;right:8px;transform:none;width:auto;justify-content:center;}
+
+  .sidebar-nav-grid{grid-template-columns:repeat(2,1fr);display:grid;}
+  .action-btn{min-width:0;}
+
+  .sidebar-toggle-btn{width:38px;height:38px;}
+}
+
+@media(max-width:420px){
+  .app-header h1{display:none;}
+  .steps-panel{max-height:30vh;}
 }
 </style>
 </head>
@@ -337,212 +392,235 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);ove
 <div class="loading-bar" id="loadingBar"></div>
 <div class="toast-container" id="toastContainer"></div>
 
-<button class="menu-btn" id="menuBtn" onclick="openNav()">
-  <div class="bar"></div><div class="bar"></div><div class="bar"></div>
-</button>
+<div class="sidebar-scrim" id="sidebarScrim" onclick="toggleSidebar()"></div>
 
-<!-- ── MAP OVERLAY BUTTONS (right side) ── -->
-<div class="map-controls">
-  <button class="map-ctrl-btn" onclick="toggleHeatmap(this)" title="Heatmap" id="heatBtn">
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 2c2.5 4 4 7 4 10a4 4 0 0 1-8 0c0-3 1.5-6 4-10z"/></svg>
-    <span class="ctrl-tooltip">Heatmap</span>
-  </button>
-  <button class="map-ctrl-btn" onclick="toggleAddMode(this)" id="addModeBtn" title="Click to add">
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 1 8 8c0 5-8 12-8 12S4 15 4 10a8 8 0 0 1 8-8z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="10" y1="10" x2="14" y2="10"/></svg>
-    <span class="ctrl-tooltip">Click to add point</span>
-  </button>
-  <button class="map-ctrl-btn" onclick="flyToUser()" title="My location">
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L12 22M2 12L22 12"/><circle cx="12" cy="12" r="4"/></svg>
-    <span class="ctrl-tooltip">My location</span>
-  </button>
-  <button class="map-ctrl-btn" onclick="toggleFullscreen()" title="Fullscreen">
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="fsIcon"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M16 21h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-    <span class="ctrl-tooltip">Fullscreen</span>
-  </button>
-</div>
+<div class="app-shell">
 
-<!-- Click-to-add banner -->
-<div class="click-add-banner" id="clickAddBanner">📍 Click anywhere on the map to place a delivery point — Press Esc to cancel</div>
+  <!-- ════ SIDEBAR ════ -->
+  <aside class="app-sidebar" id="appSidebar" aria-label="Sidebar navigation">
+    <div class="sidebar-inner">
 
-<!-- Heatmap legend -->
-<div class="heat-legend" id="heatLegend">
-  <span>Low</span><div class="heat-grad"></div><span>High</span><span style="margin-left:4px;color:var(--warn)">Delivery Density</span>
-</div>
+      <div class="sidebar-header">
+        <div class="sidebar-logo">MAP<span>TRACK</span></div>
+        <button class="refresh-btn" id="refreshBtn" onclick="manualRefresh()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>Refresh
+        </button>
+      </div>
 
-<!-- ════ SIDEBAR ════ -->
-<div id="mySidenav" class="sidenav">
+      <!-- Geocoding Search Bar -->
+      <div class="geocode-bar">
+        <div class="geocode-wrap" style="position:relative;">
+          <input class="geocode-input" id="geocodeInput" placeholder="🔍 Search any location…" onkeydown="if(event.key==='Enter')doGeocode()" oninput="debounceGeocode()"/>
+          <button class="geocode-go" onclick="doGeocode()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </button>
+          <div class="geocode-results" id="geocodeResults"></div>
+        </div>
+      </div>
 
-  <div class="sidebar-header">
-    <div class="sidebar-logo">MAP<span>TRACK</span></div>
-    <button class="refresh-btn" id="refreshBtn" onclick="manualRefresh()">
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
-        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-      </svg>Refresh
-    </button>
-  </div>
+      <!-- Map Layer Switcher -->
+      <div class="layer-bar">
+        <button class="ltab active" onclick="setLayer('street',this)">🗺 Street</button>
+        <button class="ltab" onclick="setLayer('satellite',this)">🛰 Satellite HD</button>
+        <button class="ltab" onclick="setLayer('hybrid',this)">🏙 Hybrid</button>
+        <button class="ltab" onclick="setLayer('topo',this)">🏔 Topo</button>
+        <button class="ltab" onclick="setLayer('dark',this)">🌑 Dark</button>
+      </div>
 
-  <!-- Geocoding Search Bar -->
-  <div class="geocode-bar">
-    <div class="geocode-wrap" style="position:relative;">
-      <input class="geocode-input" id="geocodeInput" placeholder="🔍 Search any location…" onkeydown="if(event.key==='Enter')doGeocode()" oninput="debounceGeocode()"/>
-      <button class="geocode-go" onclick="doGeocode()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <div class="sidebar-nav">
+        <div class="sidebar-nav-grid">
+          <button class="action-btn" onclick="showUpload()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Add
+          </button>
+          <button class="action-btn danger" onclick="showDelete()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Delete
+          </button>
+          <button class="action-btn" onclick="g()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Pay
+          </button>
+          <button class="action-btn route-all" onclick="routeAll()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M6 17V7a2 2 0 0 1 2-2h8"/><polyline points="14 3 18 7 14 11"/></svg>Route All
+          </button>
+          <button class="action-btn" onclick="window.openCatModal()" title="Manage categories">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="6" height="6" rx="1"/><rect x="9" y="3" width="6" height="6" rx="1"/><rect x="16" y="3" width="6" height="6" rx="1"/><rect x="2" y="11" width="6" height="6" rx="1"/><rect x="9" y="11" width="6" height="6" rx="1"/><rect x="16" y="11" width="6" height="6" rx="1"/></svg>Groups
+          </button>
+          <button class="action-btn measure-btn" onclick="openMeasureModal()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="8" x2="2" y2="16"/><line x1="12" y1="7" x2="12" y2="17"/><line x1="22" y1="8" x2="22" y2="16"/></svg>Measure
+          </button>
+          <button class="action-btn heat-btn" onclick="exportCSV()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export
+          </button>
+        </div>
+      </div>
+
+      <!-- Delivery search -->
+      <div class="sidebar-search">
+        <div class="search-wrap">
+          <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="searchInput" placeholder="Filter delivery points…" oninput="applyFilter()"/>
+        </div>
+      </div>
+
+      <div class="filter-tabs">
+        <button class="ftab active" onclick="setFilter('all',this)">All</button>
+        <button class="ftab" onclick="setFilter('nearby',this)">📍 Nearby</button>
+      </div>
+
+      <!-- Group / Category filter bar (no "All Groups" tab — click a group to filter, click again to clear) -->
+      <div class="group-filter-bar" id="groupFilterBar"></div>
+
+      <div class="nearby-bar" id="nearbyBar">
+        <div class="nearby-bar-top">
+          <span class="nearby-bar-title">Max distance</span>
+          <span class="nearby-dist-chip" id="nearbyDistChip">5 km</span>
+        </div>
+        <input type="range" class="nearby-slider" id="nearbySlider" min="0.5" max="50" step="0.5" value="5" oninput="onNearbySlider(this)"/>
+        <div class="nearby-presets">
+          <button class="npreset" onclick="setNearbyPreset(1)">1 km</button>
+          <button class="npreset active" onclick="setNearbyPreset(5)">5 km</button>
+          <button class="npreset" onclick="setNearbyPreset(10)">10 km</button>
+          <button class="npreset" onclick="setNearbyPreset(25)">25 km</button>
+          <button class="npreset" onclick="setNearbyPreset(50)">50 km</button>
+        </div>
+        <div class="nearby-info">Showing <span class="n-count" id="nearbyCount">—</span> within <span class="n-count" id="nearbyDistInline">5 km</span> · nearest first</div>
+      </div>
+
+      <div class="sidebar-list-label">
+        Delivery Points
+        <span class="list-count-badge" id="listCount">0</span>
+      </div>
+
+      <div id="confirmBox" class="confirm-box">
+        <div class="confirm-content">
+          <p>Delete this delivery point?</p>
+          <div class="confirm-btns">
+            <button id="yesBtn">Delete</button>
+            <button id="noBtn">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="display_items"></div>
+
+      <div class="sidebar-footer">
+        <div class="gps-dot" id="gpsDot"></div>
+        <div>
+          <div class="gps-text" id="gpsText">Locating…</div>
+          <div class="gps-sub">Live GPS status</div>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- ════ MAIN ════ -->
+  <div class="app-main">
+
+    <header class="app-header">
+      <button class="sidebar-toggle-btn" id="sidebarToggleBtn" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M.13 17.05a1.41 1.41 0 0 1 1.41-1.41H10a1.41 1.41 0 1 1 0 2.82H1.54a1.41 1.41 0 0 1-1.41-1.41zm0-14.1a1.41 1.41 0 0 1 1.41-1.41h16.92a1.41 1.41 0 1 1 0 2.82H1.54A1.41 1.41 0 0 1 .13 2.95zm0 7.05a1.41 1.41 0 0 1 1.41-1.41h16.92a1.41 1.41 0 1 1 0 2.82H1.54A1.41 1.41 0 0 1 .13 10z" clip-rule="evenodd"/>
+        </svg>
       </button>
-      <div class="geocode-results" id="geocodeResults"></div>
-    </div>
-  </div>
+      <h1>MAP<span>TRACK</span> — HD Live Delivery Map</h1>
+      <div class="header-right">
+        <button class="header-icon-btn" onclick="toggleHeatmap(this)" title="Heatmap" id="heatBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 2c2.5 4 4 7 4 10a4 4 0 0 1-8 0c0-3 1.5-6 4-10z"/></svg>
+          <span class="ctrl-tooltip">Heatmap</span>
+        </button>
+        <button class="header-icon-btn" onclick="toggleAddMode(this)" id="addModeBtn" title="Click to add">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 1 8 8c0 5-8 12-8 12S4 15 4 10a8 8 0 0 1 8-8z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="10" y1="10" x2="14" y2="10"/></svg>
+          <span class="ctrl-tooltip">Click to add point</span>
+        </button>
+        <button class="header-icon-btn" onclick="flyToUser()" title="My location">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L12 22M2 12L22 12"/><circle cx="12" cy="12" r="4"/></svg>
+          <span class="ctrl-tooltip">My location</span>
+        </button>
+        <button class="header-icon-btn" onclick="toggleFullscreen()" title="Fullscreen">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="fsIcon"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M16 21h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+          <span class="ctrl-tooltip">Fullscreen</span>
+        </button>
+      </div>
+    </header>
 
-  <!-- Map Layer Switcher -->
-  <div class="layer-bar">
-    <button class="ltab active" onclick="setLayer('street',this)">🗺 Street</button>
-    <button class="ltab" onclick="setLayer('satellite',this)">🛰 Satellite HD</button>
-    <button class="ltab" onclick="setLayer('hybrid',this)">🏙 Hybrid</button>
-    <button class="ltab" onclick="setLayer('topo',this)">🏔 Topo</button>
-    <button class="ltab" onclick="setLayer('dark',this)">🌑 Dark</button>
-  </div>
+    <div class="map-wrap">
+      <!-- Click-to-add banner -->
+      <div class="click-add-banner" id="clickAddBanner">📍 Click anywhere on the map to place a delivery point — Press Esc to cancel</div>
 
-  <div class="sidebar-actions">
-    <button class="action-btn" onclick="showUpload()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Add
-    </button>
-    <button class="action-btn danger" onclick="showDelete()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Delete
-    </button>
-    <button class="action-btn" onclick="g()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Pay
-    </button>
-    <button class="action-btn route-all" onclick="routeAll()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M6 17V7a2 2 0 0 1 2-2h8"/><polyline points="14 3 18 7 14 11"/></svg>Route All
-    </button>
-    <button class="action-btn" onclick="window.openCatModal()" style="--hover-col:var(--purple)" title="Manage categories">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="6" height="6" rx="1"/><rect x="9" y="3" width="6" height="6" rx="1"/><rect x="16" y="3" width="6" height="6" rx="1"/><rect x="2" y="11" width="6" height="6" rx="1"/><rect x="9" y="11" width="6" height="6" rx="1"/><rect x="16" y="11" width="6" height="6" rx="1"/></svg>Groups
-    </button>
-    <button class="action-btn measure-btn" onclick="openMeasureModal()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="8" x2="2" y2="16"/><line x1="12" y1="7" x2="12" y2="17"/><line x1="22" y1="8" x2="22" y2="16"/></svg>Measure
-    </button>
-    <button class="action-btn heat-btn" onclick="exportCSV()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export
-    </button>
-  </div>
+      <!-- Heatmap legend -->
+      <div class="heat-legend" id="heatLegend">
+        <span>Low</span><div class="heat-grad"></div><span>High</span><span style="margin-left:4px;color:var(--warn)">Delivery Density</span>
+      </div>
 
-  <!-- Delivery search -->
-  <div class="sidebar-search">
-    <div class="search-wrap">
-      <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="searchInput" placeholder="Filter delivery points…" oninput="applyFilter()"/>
-    </div>
-  </div>
+      <!-- Floating Measure Bar (shown while measuring, replaces modal) -->
+      <div id="measureFloatBar" style="display:none;position:absolute;top:16px;left:50%;transform:translateX(-50%);z-index:1200;background:rgba(15,20,28,0.97);border:1px solid #a78bfa;border-radius:50px;padding:8px 20px;align-items:center;gap:14px;box-shadow:0 6px 28px rgba(167,139,250,0.25);white-space:nowrap;">
+        <span style="font-size:11px;color:#a78bfa;font-weight:700;letter-spacing:1px;text-transform:uppercase;">📐 MEASURING</span>
+        <div style="width:1px;height:20px;background:rgba(255,255,255,0.1)"></div>
+        <div style="display:flex;flex-direction:column;align-items:center;">
+          <span style="font-family:Space Mono,monospace;font-size:14px;font-weight:700;color:#00ff88;" id="mfDist">—</span>
+          <span style="font-size:9px;color:#5a6878;letter-spacing:.8px;text-transform:uppercase;">Distance</span>
+        </div>
+        <div style="width:1px;height:20px;background:rgba(255,255,255,0.1)"></div>
+        <div style="display:flex;flex-direction:column;align-items:center;">
+          <span style="font-family:Space Mono,monospace;font-size:14px;font-weight:700;color:#a78bfa;" id="mfPts">0</span>
+          <span style="font-size:9px;color:#5a6878;letter-spacing:.8px;text-transform:uppercase;">Points</span>
+        </div>
+        <button onclick="window.toggleMeasureActive()" style="height:30px;padding:0 14px;border-radius:20px;border:none;background:#ff4d6d;color:#fff;font-family:DM Sans,sans-serif;font-size:12px;font-weight:700;cursor:pointer;margin-left:4px;">Stop ■</button>
+      </div>
 
-  <div class="filter-tabs">
-    <button class="ftab active" onclick="setFilter('all',this)">All</button>
-    <button class="ftab" onclick="setFilter('nearby',this)">📍 Nearby</button>
-  </div>
+      <div id="map"></div>
 
+      <!-- Route bar (route-all summary) -->
+      <div class="route-bar" id="routeBar">
+        <div class="route-bar-stat"><span class="route-bar-val" id="rb-dist">—</span><span class="route-bar-lbl">Distance</span></div>
+        <div class="route-bar-div"></div>
+        <div class="route-bar-stat"><span class="route-bar-val" id="rb-time">—</span><span class="route-bar-lbl">Est. Time</span></div>
+        <div class="route-bar-div"></div>
+        <div class="route-bar-stat"><span class="route-bar-val" id="rb-stops">—</span><span class="route-bar-lbl">Stops</span></div>
+        <button class="route-bar-close" onclick="clearRouteAll()">✕</button>
+      </div>
 
-  <!-- Group / Category filter bar -->
-  <div class="group-filter-bar" id="groupFilterBar">
-    <button class="gftab active" style="color:var(--muted2);border-color:var(--border2);" onclick="setGroupFilter('__all__',this)">All Groups</button>
-  </div>
-  <div class="nearby-bar" id="nearbyBar">
-    <div class="nearby-bar-top">
-      <span class="nearby-bar-title">Max distance</span>
-      <span class="nearby-dist-chip" id="nearbyDistChip">5 km</span>
-    </div>
-    <input type="range" class="nearby-slider" id="nearbySlider" min="0.5" max="50" step="0.5" value="5" oninput="onNearbySlider(this)"/>
-    <div class="nearby-presets">
-      <button class="npreset" onclick="setNearbyPreset(1)">1 km</button>
-      <button class="npreset active" onclick="setNearbyPreset(5)">5 km</button>
-      <button class="npreset" onclick="setNearbyPreset(10)">10 km</button>
-      <button class="npreset" onclick="setNearbyPreset(25)">25 km</button>
-      <button class="npreset" onclick="setNearbyPreset(50)">50 km</button>
-    </div>
-    <div class="nearby-info">Showing <span class="n-count" id="nearbyCount">—</span> within <span class="n-count" id="nearbyDistInline">5 km</span> · nearest first</div>
-  </div>
+      <!-- Turn-by-turn steps panel -->
+      <div class="steps-panel" id="stepsPanel">
+        <div class="steps-header">
+          <span class="steps-title">Turn-by-Turn</span>
+          <button class="steps-close" onclick="closeSteps()">✕</button>
+        </div>
+        <div class="steps-summary">
+          <div class="route-bar-stat"><span class="step-sum-val" id="sp-dist">—</span><span class="step-sum-lbl">Distance</span></div>
+          <div class="route-bar-stat"><span class="step-sum-val" id="sp-time">—</span><span class="step-sum-lbl">Est. Time</span></div>
+        </div>
+        <div class="steps-list" id="stepsList"></div>
+      </div>
 
-  <div class="sidebar-list-label">
-    Delivery Points
-    <span class="list-count-badge" id="listCount">0</span>
-  </div>
-
-  <div id="confirmBox" class="confirm-box">
-    <div class="confirm-content">
-      <p>Delete this delivery point?</p>
-      <div class="confirm-btns">
-        <button id="yesBtn">Delete</button>
-        <button id="noBtn">Cancel</button>
+      <!-- Pin info panel -->
+      <div class="info-panel" id="infoPanel">
+        <div class="info-panel-header">
+          <div>
+            <div class="info-pin-name" id="infoPinName">—</div>
+            <div class="info-pin-coords" id="infoPinCoords">—</div>
+          </div>
+          <button class="info-close" onclick="closeInfoPanel()">✕</button>
+        </div>
+        <div class="info-row">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 2c2.5 4 4 7 4 10"/></svg>
+          <span id="infoDistTxt">—</span>
+        </div>
+        <div class="info-actions">
+          <button class="info-act-btn" onclick="infoCopyCoords()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy coords
+          </button>
+          <button class="info-act-btn primary" id="infoRouteBtn">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 8 14 12"/><path d="M2 12h16"/></svg>
+            Navigate
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-
-  <div id="display_items"></div>
-</div>
-
-<!-- MAP -->
-
-<!-- Floating Measure Bar (shown while measuring, replaces modal) -->
-<div id="measureFloatBar" style="display:none;position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:1200;background:rgba(15,20,28,0.97);border:1px solid #a78bfa;border-radius:50px;padding:8px 20px;align-items:center;gap:14px;box-shadow:0 6px 28px rgba(167,139,250,0.25);white-space:nowrap;">
-  <span style="font-size:11px;color:#a78bfa;font-weight:700;letter-spacing:1px;text-transform:uppercase;">📐 MEASURING</span>
-  <div style="width:1px;height:20px;background:rgba(255,255,255,0.1)"></div>
-  <div style="display:flex;flex-direction:column;align-items:center;">
-    <span style="font-family:Space Mono,monospace;font-size:14px;font-weight:700;color:#00ff88;" id="mfDist">—</span>
-    <span style="font-size:9px;color:#5a6878;letter-spacing:.8px;text-transform:uppercase;">Distance</span>
-  </div>
-  <div style="width:1px;height:20px;background:rgba(255,255,255,0.1)"></div>
-  <div style="display:flex;flex-direction:column;align-items:center;">
-    <span style="font-family:Space Mono,monospace;font-size:14px;font-weight:700;color:#a78bfa;" id="mfPts">0</span>
-    <span style="font-size:9px;color:#5a6878;letter-spacing:.8px;text-transform:uppercase;">Points</span>
-  </div>
-  <button onclick="window.toggleMeasureActive()" style="height:30px;padding:0 14px;border-radius:20px;border:none;background:#ff4d6d;color:#fff;font-family:DM Sans,sans-serif;font-size:12px;font-weight:700;cursor:pointer;margin-left:4px;">Stop ■</button>
-</div>
-
-<div id="map"></div>
-
-<!-- Route bar (route-all summary) -->
-<div class="route-bar" id="routeBar">
-  <div class="route-bar-stat"><span class="route-bar-val" id="rb-dist">—</span><span class="route-bar-lbl">Distance</span></div>
-  <div class="route-bar-div"></div>
-  <div class="route-bar-stat"><span class="route-bar-val" id="rb-time">—</span><span class="route-bar-lbl">Est. Time</span></div>
-  <div class="route-bar-div"></div>
-  <div class="route-bar-stat"><span class="route-bar-val" id="rb-stops">—</span><span class="route-bar-lbl">Stops</span></div>
-  <button class="route-bar-close" onclick="clearRouteAll()">✕</button>
-</div>
-
-<!-- Turn-by-turn steps panel -->
-<div class="steps-panel" id="stepsPanel">
-  <div class="steps-header">
-    <span class="steps-title">Turn-by-Turn</span>
-    <button class="steps-close" onclick="closeSteps()">✕</button>
-  </div>
-  <div class="steps-summary">
-    <div class="route-bar-stat"><span class="step-sum-val" id="sp-dist">—</span><span class="step-sum-lbl">Distance</span></div>
-    <div class="route-bar-stat"><span class="step-sum-val" id="sp-time">—</span><span class="step-sum-lbl">Est. Time</span></div>
-  </div>
-  <div class="steps-list" id="stepsList"></div>
-</div>
-
-<!-- Pin info panel -->
-<div class="info-panel" id="infoPanel">
-  <div class="info-panel-header">
-    <div>
-      <div class="info-pin-name" id="infoPinName">—</div>
-      <div class="info-pin-coords" id="infoPinCoords">—</div>
-    </div>
-    <button class="info-close" onclick="closeInfoPanel()">✕</button>
-  </div>
-  <div class="info-row">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 2c2.5 4 4 7 4 10"/></svg>
-    <span id="infoDistTxt">—</span>
-  </div>
-  <div class="info-actions">
-    <button class="info-act-btn" onclick="infoCopyCoords()">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-      Copy coords
-    </button>
-    <button class="info-act-btn primary" id="infoRouteBtn">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 8 14 12"/><path d="M2 12h16"/></svg>
-      Navigate
-    </button>
   </div>
 </div>
 
@@ -688,14 +766,6 @@ let currentGroupFilter='__all__';
 /* ── Category system ── */
 const PALETTE=['#00d4ff','#00ff88','#ff4d6d','#ffb020','#a78bfa','#f97316','#06b6d4','#84cc16','#ec4899','#8b5cf6','#14b8a6','#f59e0b'];
 let categories=JSON.parse(localStorage.getItem('maptrack_cats')||'[]');
-if(!categories.length){
-  categories=[
-    {id:'cat_1',name:'Priority',color:'#ff4d6d'},
-    {id:'cat_2',name:'Standard',color:'#00d4ff'},
-    {id:'cat_3',name:'Fragile',color:'#ffb020'},
-  ];
-  saveCats();
-}
 let newCatColor=PALETTE[0];
 
 function saveCats(){localStorage.setItem('maptrack_cats',JSON.stringify(categories));}
@@ -725,6 +795,31 @@ function haversine(lat1,lng1,lat2,lng2){
   const a=Math.sin(dLat/2)**2+Math.cos(lat1*toR)*Math.cos(lat2*toR)*Math.sin(dLng/2)**2;
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
+
+/* ── Sidebar toggle (desktop: collapses width; mobile: opens as overlay drawer) ── */
+function isMobileLayout(){ return window.innerWidth<=900; }
+window.toggleSidebar=function(){
+  const sb=document.getElementById('appSidebar');
+  const scrim=document.getElementById('sidebarScrim');
+  if(isMobileLayout()){
+    const open=sb.classList.toggle('mobile-open');
+    scrim.classList.toggle('visible',open);
+  } else {
+    sb.classList.toggle('collapsed');
+  }
+  setTimeout(()=>{ if(window.map) window.map.invalidateSize(); },380);
+};
+/* Keep sidebar state sane when crossing the mobile/desktop breakpoint */
+window.addEventListener('resize',()=>{
+  const sb=document.getElementById('appSidebar');
+  const scrim=document.getElementById('sidebarScrim');
+  if(!isMobileLayout()){
+    sb.classList.remove('mobile-open');
+    scrim.classList.remove('visible');
+  } else {
+    sb.classList.remove('collapsed');
+  }
+});
 
 /* ── Map ── */
 window.map=L.map('map',{zoomControl:false,attributionControl:true}).setView([20,0],2);
@@ -757,8 +852,6 @@ map.addLayer(clusterGroup);
 
 const geocodeIcon=L.icon({iconUrl:'https://cdn-icons-png.flaticon.com/128/9131/9131546.png',iconSize:[26,26],iconAnchor:[13,26],popupAnchor:[0,-26]});
 
-/* ── CHANGED: makePinIcon now always receives the color passed in,
-   but addMarker always passes '#ff2222' (red) for the pin icon ── */
 function makePinIcon(color){
   return L.divIcon({
     html:`<div style="position:relative;width:28px;height:36px;">
@@ -775,7 +868,6 @@ function addMarker(name,lat,lng,key,catId){
   const color=catColor(catId);
   const cat=getCat(catId);
   const catLabel=cat?`<span style="background:${color}22;color:${color};border:1px solid ${color}44;border-radius:8px;font-size:10px;padding:1px 6px;font-weight:700">${cat.name}</span>`:'';
-  /* ── Only change: pin icon is always red (#ff2222) ── */
   const m=L.marker([lat,lng],{icon:makePinIcon('#ff2222')})
     .bindPopup(`<div style="font-family:'DM Sans',sans-serif;font-size:13px;padding:2px;min-width:130px">
       <b style="color:${color}">${name}</b><br>
@@ -804,8 +896,15 @@ if(navigator.geolocation){
       accuracyCircle.setLatLng([userLat,userLng]);
       accuracyCircle.setRadius(pos.coords.accuracy);
     }
+    const gd=document.getElementById('gpsDot'),gt=document.getElementById('gpsText');
+    if(gd){gd.classList.add('live');}
+    if(gt){gt.textContent='Location active';}
     if(allNodes.length) applyFilter();
-  },err=>console.warn(err),{enableHighAccuracy:true,maximumAge:0,timeout:10000});
+  },err=>{
+    console.warn(err);
+    const gt=document.getElementById('gpsText');
+    if(gt) gt.textContent='Location unavailable';
+  },{enableHighAccuracy:true,maximumAge:0,timeout:10000});
 }
 
 window.flyToUser=function(){
@@ -978,14 +1077,10 @@ function buildCatList(){
   });
 }
 
+/* ── Group filter bar: "All Groups" removed — clicking the active group tab again clears the filter ── */
 function buildGroupFilterBar(){
   const bar=document.getElementById('groupFilterBar'); bar.innerHTML='';
-  const all=document.createElement('button');
-  all.className='gftab'+(currentGroupFilter==='__all__'?' active':'');
-  all.style.color='var(--muted2)'; all.style.borderColor=currentGroupFilter==='__all__'?'var(--muted2)':'var(--border)';
-  all.textContent='All Groups';
-  all.onclick=()=>setGroupFilter('__all__',all);
-  bar.appendChild(all);
+  if(!categories.length) return;
   categories.forEach(cat=>{
     const btn=document.createElement('button');
     btn.className='gftab'+(currentGroupFilter===cat.id?' active':'');
@@ -997,10 +1092,13 @@ function buildGroupFilterBar(){
 }
 
 window.setGroupFilter=function(id,el){
-  currentGroupFilter=id;
+  /* toggle: clicking the already-active group clears the filter back to showing all */
+  currentGroupFilter=(currentGroupFilter===id)?'__all__':id;
   document.querySelectorAll('.gftab').forEach(b=>{b.classList.remove('active');b.style.borderColor='var(--border)';});
-  el.classList.add('active');
-  el.style.borderColor=el.style.color||'var(--muted2)';
+  if(currentGroupFilter!=='__all__'){
+    el.classList.add('active');
+    el.style.borderColor=el.style.color||'var(--muted2)';
+  }
   applyFilter();
 };
 
@@ -1305,9 +1403,6 @@ function startMeasuring(){
   document.getElementById("measureHintTxt").innerHTML="<b>Active!</b> Click the map to place points.";
   document.getElementById("measureModal").classList.remove("open");
   document.getElementById("measureFloatBar").style.display="flex";
-  document.getElementById("mySidenav").classList.remove("open");
-  document.getElementById("menuBtn").classList.remove("open");
-  document.getElementById("map").style.marginLeft="0";
 }
 function stopMeasuring(){
   measureActive=false;
@@ -1405,13 +1500,7 @@ window.delete_btn=function(){
   },{onlyOnce:true});
 };
 
-/* ── Nav & modals ── */
-window.openNav=function(){
-  const nav=document.getElementById("mySidenav"),btn=document.getElementById("menuBtn");
-  const open=nav.classList.contains("open");
-  nav.classList.toggle("open"); btn.classList.toggle("open");
-  document.getElementById("map").style.marginLeft=open?"0":"var(--sidebar-w)";
-};
+/* ── modals ── */
 window.showUpload=function(){document.getElementById("uploadModal").classList.add("open");};
 window.showDelete=function(){document.getElementById("deleteModal").classList.add("open");};
 window.closeModal=function(id){document.getElementById(id).classList.remove("open");};
@@ -1438,6 +1527,10 @@ window.toggleQR=function(){
   wrapper.classList.toggle("visible",qrVisible);
   btn.textContent=qrVisible?"Hide QR Code":"Show QR Code";
 };
+
+/* initial resize so map fills the flex layout correctly */
+window.addEventListener('load',()=>{ setTimeout(()=>{ if(window.map) window.map.invalidateSize(); },200); });
+window.addEventListener('resize',()=>{ if(window.map) window.map.invalidateSize(); });
 </script>
 </body>
 </html>
