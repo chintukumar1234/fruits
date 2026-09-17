@@ -12,397 +12,94 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-<style>
-:root {
-  --bg:#07090d; --surface:#0f141c; --surface2:#161e2a; --surface3:#1c2535;
-  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
-  --accent:#00d4ff; --accent2:#00ff88; --danger:#ff4d6d; --warn:#ffb020; --purple:#a78bfa;
-  --text:#e8edf2; --muted:#5a6878; --muted2:#8899aa;
-  --sidebar-w:280px; --ease:cubic-bezier(0.4,0,0.2,1);
-  --radius:12px; --radius-sm:8px; --header-h:64px;
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        bg: '#07090d',
+        surface: '#0f141c',
+        surface2: '#161e2a',
+        surface3: '#1c2535',
+        accent: '#00d4ff',
+        accent2: '#00ff88',
+        danger: '#ff4d6d',
+        warn: '#ffb020',
+        purple: '#a78bfa',
+        ink: '#e8edf2',
+        muted: '#5a6878',
+        muted2: '#8899aa',
+      },
+      fontFamily: {
+        mono: ['"Space Mono"','monospace'],
+        sans: ['"DM Sans"','sans-serif'],
+      },
+      keyframes: {
+        'slide-down': { from:{opacity:0,transform:'translateX(-50%) translateY(-12px)'}, to:{opacity:1,transform:'translateX(-50%) translateY(0)'} },
+        'slide-up-c': { from:{opacity:0,transform:'translateX(-50%) translateY(12px)'}, to:{opacity:1,transform:'translateX(-50%) translateY(0)'} },
+        'slide-in-right': { from:{opacity:0,transform:'translateX(20px)'}, to:{opacity:1,transform:'translateX(0)'} },
+        'modal-in': { from:{opacity:0,transform:'translateY(16px) scale(.97)'}, to:{opacity:1,transform:'none'} },
+        'toast-in': { from:{opacity:0,transform:'translateX(20px)'}, to:{opacity:1,transform:'translateX(0)'} },
+        'load-bar': { '0%':{transform:'scaleX(0) translateX(0)'}, '50%':{transform:'scaleX(.7) translateX(30%)'}, '100%':{transform:'scaleX(0) translateX(100%)'} },
+      },
+      animation: {
+        'slide-down':'slide-down .3s cubic-bezier(0.4,0,0.2,1)',
+        'slide-up-c':'slide-up-c .3s cubic-bezier(0.4,0,0.2,1)',
+        'slide-in-right':'slide-in-right .3s cubic-bezier(0.4,0,0.2,1)',
+        'modal-in':'modal-in .25s cubic-bezier(0.4,0,0.2,1)',
+        'toast-in':'toast-in .3s cubic-bezier(0.4,0,0.2,1)',
+        'load-bar':'load-bar 1.2s ease infinite',
+      }
+    }
+  }
 }
-*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh;}
+</script>
 
-/* ── APP SHELL (sidebar + header layout) ── */
-.app-shell{display:flex;align-items:stretch;height:100vh;width:100%;}
-
-.app-sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:width .35s var(--ease),min-width .35s var(--ease);}
-.app-sidebar.collapsed{width:0;min-width:0;border-right:none;}
-.sidebar-inner{width:var(--sidebar-w);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
-
-.app-main{flex:1;min-width:0;height:100vh;display:flex;flex-direction:column;position:relative;}
-
-.app-header{height:var(--header-h);min-height:var(--header-h);display:flex;align-items:center;gap:14px;padding:0 18px;background:var(--surface);border-bottom:1px solid var(--border);z-index:950;}
-.app-header h1{font-family:'Space Mono',monospace;font-size:15px;font-weight:700;letter-spacing:.5px;color:var(--text);}
-.app-header h1 span{color:var(--accent);}
-.header-right{display:flex;align-items:center;gap:8px;margin-left:auto;}
-.header-icon-btn{width:38px;height:38px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--surface2);color:var(--muted2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;position:relative;}
-.header-icon-btn:hover{border-color:var(--accent);color:var(--accent);}
-.header-icon-btn.active{border-color:var(--accent2);color:var(--accent2);background:rgba(0,255,136,.08);}
-.header-icon-btn .ctrl-tooltip{position:absolute;top:44px;right:0;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:4px 10px;font-size:11px;white-space:nowrap;pointer-events:none;opacity:0;transition:.2s;}
-.header-icon-btn:hover .ctrl-tooltip{opacity:1;}
-.sidebar-toggle-btn{width:36px;height:36px;border-radius:var(--radius-sm);background:none;border:1px solid var(--border2);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text);transition:.2s;flex-shrink:0;}
-.sidebar-toggle-btn:hover{border-color:var(--accent);color:var(--accent);}
-
-.map-wrap{position:relative;flex:1;min-height:0;}
-#map{height:100%;width:100%;}
+<style>
+/* Only what genuinely cannot be a Tailwind utility class:
+   1) third-party library markup we don't author (Leaflet/MarkerCluster/Routing)
+   2) ::-webkit-scrollbar pseudo-elements
+   3) the slider's --pct-driven gradient track, since --pct is set from JS per-element */
+body{overflow:hidden;height:100vh;}
 .leaflet-container{background:#0d1117!important;}
 .leaflet-routing-container{display:none!important;}
 .leaflet-control-zoom{border:none!important;box-shadow:0 4px 20px rgba(0,0,0,.5)!important;}
-.leaflet-control-zoom a{background:var(--surface)!important;color:var(--text)!important;border:1px solid var(--border2)!important;width:36px!important;height:36px!important;line-height:36px!important;font-size:18px!important;}
-.leaflet-control-zoom a:hover{background:var(--surface2)!important;color:var(--accent)!important;}
-.leaflet-control-layers{background:var(--surface)!important;border:1px solid var(--border2)!important;color:var(--text)!important;border-radius:var(--radius)!important;box-shadow:0 4px 20px rgba(0,0,0,.4)!important;}
-.leaflet-control-layers label{color:var(--text)!important;font-family:'DM Sans',sans-serif!important;font-size:13px!important;}
-
-/* Cluster styles */
+.leaflet-control-zoom a{background:#0f141c!important;color:#e8edf2!important;border:1px solid rgba(255,255,255,.12)!important;width:36px!important;height:36px!important;line-height:36px!important;font-size:18px!important;}
+.leaflet-control-zoom a:hover{background:#161e2a!important;color:#00d4ff!important;}
+.leaflet-control-layers{background:#0f141c!important;border:1px solid rgba(255,255,255,.12)!important;color:#e8edf2!important;border-radius:12px!important;box-shadow:0 4px 20px rgba(0,0,0,.4)!important;}
+.leaflet-control-layers label{color:#e8edf2!important;font-family:'DM Sans',sans-serif!important;font-size:13px!important;}
 .marker-cluster-small,.marker-cluster-medium,.marker-cluster-large{background:rgba(0,212,255,.15)!important;}
-.marker-cluster-small div,.marker-cluster-medium div,.marker-cluster-large div{
-  background:rgba(0,212,255,.35)!important;color:#fff!important;font-family:'DM Sans',sans-serif!important;font-weight:600!important;font-size:13px!important;}
+.marker-cluster-small div,.marker-cluster-medium div,.marker-cluster-large div{background:rgba(0,212,255,.35)!important;color:#fff!important;font-family:'DM Sans',sans-serif!important;font-weight:600!important;font-size:13px!important;}
 
-/* ── SIDEBAR HEADER (logo) ── */
-.sidebar-header{padding:18px 16px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
-.sidebar-logo{font-family:'Space Mono',monospace;font-size:15px;font-weight:700;color:var(--accent);letter-spacing:1px;white-space:nowrap;}
-.sidebar-logo span{color:var(--accent2);}
-.refresh-btn{margin-left:auto;flex-shrink:0;display:flex;align-items:center;gap:5px;height:30px;padding:0 10px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--surface2);color:var(--muted2);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;cursor:pointer;letter-spacing:.5px;text-transform:uppercase;transition:.2s;white-space:nowrap;}
-.refresh-btn:hover{border-color:var(--accent);color:var(--accent);}
-.refresh-btn svg{transition:transform .6s var(--ease);}
-.refresh-btn.spinning svg{transform:rotate(360deg);}
+#display_items::-webkit-scrollbar,.cat-list::-webkit-scrollbar,.steps-list::-webkit-scrollbar,.measure-pts-scroll::-webkit-scrollbar{width:4px;}
+#display_items::-webkit-scrollbar-thumb,.cat-list::-webkit-scrollbar-thumb,.steps-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.07);border-radius:4px;}
 
-/* ── GEOCODE SEARCH BAR (Google Maps style) ── */
-.geocode-bar{padding:14px 16px 8px;border-bottom:1px solid var(--border);}
-.geocode-wrap{position:relative;display:flex;align-items:center;gap:8px;}
-.geocode-input{flex:1;height:40px;border-radius:20px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--text);padding:0 40px 0 16px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:.2s;}
-.geocode-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,212,255,.08);}
-.geocode-input::placeholder{color:var(--muted);}
-.geocode-go{position:absolute;right:6px;width:30px;height:30px;border-radius:50%;border:none;background:var(--accent);color:#000;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;}
-.geocode-go:hover{transform:scale(1.08);}
-.geocode-results{position:absolute;top:48px;left:0;right:0;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);z-index:10;max-height:220px;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.5);}
-.geocode-results:empty{display:none;}
-.geocode-item{padding:10px 14px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;transition:.15s;}
-.geocode-item:last-child{border-bottom:none;}
-.geocode-item:hover{background:var(--surface2);color:var(--accent);}
-.geocode-item svg{flex-shrink:0;color:var(--muted);}
+.nearby-slider{-webkit-appearance:none;appearance:none;background:linear-gradient(to right,#00d4ff 0%,#00d4ff var(--pct,10%),rgba(255,255,255,.08) var(--pct,10%));}
+.nearby-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#00d4ff;border:2px solid #0f141c;box-shadow:0 0 0 3px rgba(0,212,255,.25);cursor:pointer;}
 
-/* ── LAYER SWITCHER ── */
-.layer-bar{display:flex;gap:6px;padding:10px 16px;border-bottom:1px solid var(--border);overflow-x:auto;}
-.layer-bar::-webkit-scrollbar{display:none;}
-.ltab{font-size:11px;font-weight:600;letter-spacing:.3px;padding:5px 12px;border-radius:16px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;transition:.2s;white-space:nowrap;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px;}
-.ltab.active{background:rgba(0,212,255,.1);border-color:var(--accent);color:var(--accent);}
-.ltab:hover:not(.active){border-color:var(--border2);color:var(--text);}
-
-/* ── ACTIONS (nav-style rows, like sidebar nav items) ── */
-.sidebar-nav{padding:10px 12px;border-bottom:1px solid var(--border);}
-.sidebar-nav-grid{display:flex;gap:6px;flex-wrap:wrap;}
-.action-btn{flex:1;min-width:56px;height:36px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:.2s;white-space:nowrap;}
-.action-btn:hover{border-color:var(--accent);background:rgba(0,212,255,.06);transform:translateY(-1px);}
-.action-btn.danger:hover{border-color:var(--danger);background:rgba(255,77,109,.06);}
-.action-btn.route-all:hover{border-color:var(--accent2);background:rgba(0,255,136,.06);color:var(--accent2);}
-.action-btn.heat-btn:hover{border-color:var(--warn);background:rgba(255,176,32,.06);color:var(--warn);}
-.action-btn.measure-btn:hover{border-color:var(--purple);background:rgba(167,139,250,.06);color:var(--purple);}
-.action-btn svg{flex-shrink:0;}
-
-/* ── SEARCH ── */
-.sidebar-search{padding:8px 12px 4px;}
-.search-wrap{position:relative;}
-.search-wrap input{width:100%;height:36px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface2);color:var(--text);padding:0 12px 0 32px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:.2s;}
-.search-wrap input:focus{border-color:var(--accent);}
-.search-wrap input::placeholder{color:var(--muted);}
-.search-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;}
-
-/* ── FILTER TABS ── */
-.filter-tabs{display:flex;gap:5px;padding:6px 12px 8px;border-bottom:1px solid var(--border);overflow-x:auto;}
-.filter-tabs::-webkit-scrollbar{display:none;}
-.ftab{font-size:11px;font-weight:600;letter-spacing:.5px;padding:4px 10px;border-radius:16px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;transition:.2s;white-space:nowrap;flex-shrink:0;font-family:'DM Sans',sans-serif;}
-.ftab.active{background:rgba(0,212,255,.1);border-color:var(--accent);color:var(--accent);}
-.ftab:hover:not(.active){border-color:var(--border2);color:var(--text);}
-
-/* ── NEARBY BAR ── */
-.nearby-bar{display:none;flex-direction:column;gap:8px;padding:10px 16px 12px;border-bottom:1px solid var(--border);}
-.nearby-bar.visible{display:flex;}
-.nearby-bar-top{display:flex;align-items:center;justify-content:space-between;}
-.nearby-bar-title{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
-.nearby-dist-chip{font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:var(--accent);background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);border-radius:var(--radius-sm);padding:2px 10px;}
-.nearby-slider{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:4px;outline:none;cursor:pointer;background:linear-gradient(to right,var(--accent) 0%,var(--accent) var(--pct,10%),rgba(255,255,255,.08) var(--pct,10%));}
-.nearby-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);box-shadow:0 0 0 3px rgba(0,212,255,.25);cursor:pointer;}
-.nearby-presets{display:flex;gap:5px;flex-wrap:wrap;}
-.npreset{font-size:10px;font-weight:600;padding:3px 9px;border-radius:12px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;transition:.2s;}
-.npreset:hover,.npreset.active{border-color:var(--accent);color:var(--accent);background:rgba(0,212,255,.08);}
-.nearby-info{font-size:11px;color:var(--muted);}
-.nearby-info .n-count{font-family:'Space Mono',monospace;color:var(--accent2);font-weight:700;}
-
-/* ── LIST ── */
-.sidebar-list-label{padding:12px 16px 6px;font-size:10px;font-weight:600;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}
-.list-count-badge{font-family:'Space Mono',monospace;font-size:10px;color:var(--accent);background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.15);border-radius:12px;padding:2px 7px;}
-#display_items{flex:1;overflow-y:auto;padding:4px 10px 12px;display:flex;flex-direction:column;gap:6px;}
-#display_items::-webkit-scrollbar{width:4px;}
-#display_items::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
-
-.delivery-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;display:flex;align-items:center;gap:10px;transition:.2s;cursor:pointer;}
-.delivery-card:hover{border-color:rgba(0,212,255,.35);transform:translateX(2px);background:var(--surface3);}
-.delivery-icon{width:34px;height:34px;border-radius:var(--radius-sm);background:rgba(0,212,255,.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.delivery-name{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.delivery-dist{margin-top:2px;display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);}
-.dist-pill{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;color:#fff;background:var(--accent2);border-radius:5px;padding:1px 5px;}
-.dist-pill.far{background:var(--warn);}
-.card-actions{display:flex;gap:5px;flex-shrink:0;}
-.icon-btn{width:28px;height:28px;border-radius:var(--radius-sm);border:1px solid var(--border);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;color:var(--muted);}
-.icon-btn.route-btn:hover{border-color:var(--accent2);color:var(--accent2);}
-.icon-btn.del-btn:hover{border-color:var(--danger);color:var(--danger);}
-.icon-btn.fly-btn:hover{border-color:var(--accent);color:var(--accent);}
-.empty-state{padding:32px 16px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;}
-.empty-state p{font-size:12px;color:var(--muted);line-height:1.6;}
-
-/* ── SIDEBAR FOOTER (profile row) ── */
-.sidebar-footer{padding:12px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;}
-.sidebar-footer .gps-dot{width:10px;height:10px;border-radius:50%;background:var(--muted);flex-shrink:0;}
-.sidebar-footer .gps-dot.live{background:var(--accent2);box-shadow:0 0 0 4px rgba(0,255,136,.18);}
-.sidebar-footer .gps-text{font-size:12px;color:var(--muted2);}
-.sidebar-footer .gps-sub{font-size:10px;color:var(--muted);}
-
-/* ── MAP OVERLAY CONTROLS (secondary, floating on map) ── */
-.map-controls{position:absolute;top:16px;right:16px;z-index:900;display:flex;flex-direction:column;gap:8px;}
-.map-ctrl-btn{width:40px;height:40px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--border2);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text);transition:.2s;box-shadow:0 4px 16px rgba(0,0,0,.4);}
-.map-ctrl-btn:hover{border-color:var(--accent);color:var(--accent);}
-.map-ctrl-btn.active{border-color:var(--accent2);color:var(--accent2);background:rgba(0,255,136,.08);}
-.ctrl-tooltip{position:absolute;right:48px;top:50%;transform:translateY(-50%);background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:4px 10px;font-size:12px;white-space:nowrap;pointer-events:none;opacity:0;transition:.2s;}
-.map-ctrl-btn:hover .ctrl-tooltip{opacity:1;}
-
-/* Click-to-add banner */
-.click-add-banner{position:absolute;top:16px;left:50%;transform:translateX(-50%);background:rgba(0,255,136,.12);border:1px solid var(--accent2);border-radius:30px;padding:7px 18px;font-size:12px;color:var(--accent2);z-index:900;display:none;animation:slide-down .3s var(--ease);white-space:nowrap;font-weight:600;letter-spacing:.3px;}
-.click-add-banner.visible{display:block;}
-@keyframes slide-down{from{opacity:0;transform:translateX(-50%) translateY(-12px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
-
-/* Heatmap legend */
-.heat-legend{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border2);border-radius:30px;padding:6px 16px;display:none;align-items:center;gap:10px;z-index:850;font-size:11px;color:var(--muted);box-shadow:0 4px 16px rgba(0,0,0,.4);}
-.heat-legend.visible{display:flex;}
-.heat-grad{width:80px;height:8px;border-radius:4px;background:linear-gradient(to right,blue,cyan,lime,yellow,red);}
-
-/* ── INFO PANEL (Google Maps side info) ── */
-.info-panel{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);z-index:900;background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:16px 20px;min-width:300px;max-width:420px;box-shadow:0 8px 40px rgba(0,0,0,.6);display:none;animation:slide-up .3s var(--ease);}
-.info-panel.visible{display:block;}
-.info-panel-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px;}
-.info-pin-name{font-size:16px;font-weight:600;color:var(--text);}
-.info-pin-coords{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-top:3px;}
-.info-close{width:26px;height:26px;border-radius:50%;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;font-size:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.2s;}
-.info-close:hover{border-color:var(--danger);color:var(--danger);}
-.info-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted2);padding:4px 0;border-bottom:1px solid var(--border);}
-.info-row:last-child{border-bottom:none;}
-.info-row svg{flex-shrink:0;color:var(--accent);}
-.info-actions{display:flex;gap:8px;margin-top:12px;}
-.info-act-btn{flex:1;height:36px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:5px;}
-.info-act-btn:hover{border-color:var(--accent);color:var(--accent);}
-.info-act-btn.primary{background:var(--accent);color:#000;border-color:var(--accent);}
-.info-act-btn.primary:hover{opacity:.9;}
-
-/* ── ROUTE STEPS PANEL ── */
-.steps-panel{position:absolute;bottom:20px;right:16px;z-index:900;background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:0;width:180px;max-height:160px;box-shadow:0 8px 40px rgba(0,0,0,.6);display:none;flex-direction:column;overflow:hidden;}
-.steps-panel.visible{display:flex;animation:slide-in-right .3s var(--ease);}
-@keyframes slide-in-right{from{opacity:0;transform:translateX(20px);}to{opacity:1;transform:translateX(0);}}
-.steps-header{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-.steps-title{font-size:12px;font-weight:600;color:var(--accent2);letter-spacing:.5px;text-transform:uppercase;}
-.steps-close{width:24px;height:24px;border-radius:50%;border:none;background:none;color:var(--muted);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:.2s;}
-.steps-close:hover{color:var(--danger);}
-.steps-summary{padding:10px 14px;background:rgba(0,255,136,.04);border-bottom:1px solid var(--border);display:flex;gap:16px;}
-.step-sum-val{font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:var(--accent2);}
-.step-sum-lbl{font-size:10px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;}
-.steps-list{flex:1;overflow-y:auto;padding:8px 0;}
-.steps-list::-webkit-scrollbar{width:3px;}
-.steps-list::-webkit-scrollbar-thumb{background:var(--border);}
-.step-item{padding:8px 14px;display:flex;align-items:flex-start;gap:10px;font-size:12px;color:var(--muted2);border-bottom:1px solid var(--border);transition:.15s;}
-.step-item:last-child{border-bottom:none;}
-.step-item:hover{background:var(--surface2);}
-.step-num{width:20px;height:20px;border-radius:50%;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--accent);flex-shrink:0;margin-top:1px;}
-.step-text{flex:1;line-height:1.4;}
-.step-dist{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px;}
-
-/* ── ROUTE BAR ── */
-.route-bar{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(15,20,28,.96);backdrop-filter:blur(12px);border:1px solid var(--accent2);border-radius:50px;padding:8px 20px;display:none;align-items:center;gap:14px;z-index:900;box-shadow:0 6px 28px rgba(0,255,136,.15);font-size:13px;white-space:nowrap;}
-.route-bar.visible{display:flex;animation:slide-up .3s var(--ease);}
-@keyframes slide-up{from{opacity:0;transform:translateX(-50%) translateY(12px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
-.route-bar-stat{display:flex;flex-direction:column;align-items:center;gap:1px;}
-.route-bar-val{font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:var(--accent2);}
-.route-bar-lbl{font-size:9px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;}
-.route-bar-div{width:1px;height:24px;background:var(--border);}
-.route-bar-close{width:24px;height:24px;border-radius:50%;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:.2s;margin-left:4px;}
-.route-bar-close:hover{border-color:var(--danger);color:var(--danger);}
-
-/* ── MODALS ── */
-.modal-overlay{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;}
-.modal-overlay.open{display:flex;}
-.modal{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:26px;width:340px;box-shadow:0 32px 80px rgba(0,0,0,.6);animation:modal-in .25s var(--ease);}
-@keyframes modal-in{from{opacity:0;transform:translateY(16px) scale(.97);}to{opacity:1;transform:none;}}
-.modal-title{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:1px;color:var(--accent);margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;}
-.modal-close{width:26px;height:26px;border-radius:var(--radius-sm);border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:.2s;}
-.modal-close:hover{border-color:var(--danger);color:var(--danger);}
-.modal-fields{display:flex;flex-direction:column;gap:10px;}
-.field-group{display:flex;flex-direction:column;gap:4px;}
-.field-label{font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--muted);text-transform:uppercase;}
-.field-input{height:40px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface2);color:var(--text);padding:0 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:.2s;}
-.field-input[type="file"]{padding:8px 12px;height:auto;cursor:pointer;}
-.field-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,212,255,.08);}
-.modal-msg{font-size:12px;color:var(--danger);min-height:16px;margin-top:2px;}
-.modal-submit{width:100%;height:42px;border-radius:var(--radius);border:none;background:linear-gradient(135deg,var(--accent),#0099cc);color:#000;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;transition:.2s;}
-.modal-submit:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,212,255,.3);}
-.modal-submit.danger-submit{background:linear-gradient(135deg,var(--danger),#cc2244);color:#fff;}
-
-/* ── MEASURE MODAL ── */
-.measure-modal{background:var(--surface);border:1px solid rgba(167,139,250,.35);border-radius:20px;padding:22px;width:360px;box-shadow:0 32px 80px rgba(0,0,0,.7);animation:modal-in .25s var(--ease);display:flex;flex-direction:column;gap:12px;}
-.measure-modal .modal-title{color:var(--purple);margin-bottom:0;}
-.measure-hint-box{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;background:rgba(167,139,250,.05);border:1px solid rgba(167,139,250,.15);border-radius:var(--radius-sm);font-size:12px;color:rgba(167,139,250,.9);line-height:1.5;}
-.measure-stats{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
-.measure-stat{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 11px;}
-.mstat-label{font-size:10px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;}
-.mstat-val{font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:var(--accent2);}
-.measure-pts-scroll{max-height:100px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;}
-.mpt{font-size:10px;font-family:'Space Mono',monospace;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:3px 8px;display:flex;justify-content:space-between;}
-.mpt.last{color:var(--accent2);border-color:rgba(0,255,136,.25);}
-.mpt-seg{color:var(--accent);margin-left:8px;}
-.measure-actions{display:flex;gap:8px;}
-.maction{flex:1;height:38px;border-radius:var(--radius-sm);border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:.2s;}
-.maction.start{background:linear-gradient(135deg,var(--purple),#7c3aed);color:#fff;}
-.maction.stop{background:linear-gradient(135deg,var(--danger),#cc2244);color:#fff;}
-.maction.clear{background:var(--surface2);color:var(--muted);border:1px solid var(--border);flex:0 0 70px;}
-
-/* ── CONFIRM ── */
-.confirm-box{position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;}
-.confirm-content{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:26px;width:300px;box-shadow:0 32px 80px rgba(0,0,0,.6);display:flex;flex-direction:column;align-items:center;gap:18px;animation:modal-in .25s var(--ease);}
-.confirm-content p{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:1px;color:var(--text);text-align:center;}
-.confirm-btns{display:flex;gap:10px;width:100%;}
-.confirm-btns button{flex:1;height:38px;border-radius:var(--radius-sm);border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;}
-#yesBtn{background:linear-gradient(135deg,var(--danger),#cc2244);color:#fff;}
-#noBtn{background:var(--surface2);color:var(--text);border:1px solid var(--border)!important;}
-
-/* ── PAYMENT ── */
-.pay-modal{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:26px;width:260px;box-shadow:0 32px 80px rgba(0,0,0,.6);animation:modal-in .25s var(--ease);display:flex;flex-direction:column;align-items:center;gap:16px;}
-.qr-toggle-btn{width:100%;height:40px;border-radius:var(--radius);border:1px solid var(--accent);background:rgba(0,212,255,.08);color:var(--accent);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:.15s;}
-.qr-toggle-btn:hover{background:rgba(0,212,255,.18);}
-#qrWrapper{display:none;flex-direction:column;align-items:center;gap:8px;}
-#qrWrapper.visible{display:flex;}
-#payQrCanvas{background:#fff;border-radius:10px;padding:8px;}
-.qr-label{font-size:11px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;}
-
-/* ── TOAST ── */
-.toast-container{position:fixed;top:16px;right:16px;z-index:4000;display:flex;flex-direction:column;gap:6px;pointer-events:none;}
-.toast{background:rgba(15,20,28,.97);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:var(--radius);padding:9px 14px;font-size:12px;color:var(--text);display:flex;align-items:center;gap:7px;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:toast-in .3s var(--ease);pointer-events:auto;}
-.toast.success{border-color:var(--accent2);}
-.toast.error{border-color:var(--danger);}
-.toast.info{border-color:var(--accent);}
-@keyframes toast-in{from{opacity:0;transform:translateX(20px);}to{opacity:1;transform:translateX(0);}}
-
-/* ── LOADING BAR ── */
-.loading-bar{position:fixed;top:0;left:0;right:0;z-index:5000;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));display:none;}
-.loading-bar.active{display:block;animation:load-bar 1.2s ease infinite;}
-@keyframes load-bar{0%{transform:scaleX(0) translateX(0);}50%{transform:scaleX(.7) translateX(30%);}100%{transform:scaleX(0) translateX(100%);}}
-
-/* ── CATEGORY STYLES ── */
-.cat-dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.cat-badge{font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;letter-spacing:.3px;white-space:nowrap;}
-.cat-section-header{padding:8px 14px 4px;font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;display:flex;align-items:center;gap:6px;color:var(--muted);}
-.cat-section-header .cat-dot{width:10px;height:10px;}
-
-/* manage categories modal */
-.cat-modal{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:24px;width:380px;max-height:88vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.7);animation:modal-in .25s var(--ease);display:flex;flex-direction:column;gap:14px;}
-.cat-modal .modal-title{margin-bottom:0;}
-.cat-list{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;}
-.cat-list::-webkit-scrollbar{width:3px;}
-.cat-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
-.cat-row{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;transition:.15s;}
-.cat-row:hover{border-color:var(--border2);}
-.cat-color-swatch{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.2);cursor:pointer;flex-shrink:0;}
-.cat-name-lbl{flex:1;font-size:13px;font-weight:500;color:var(--text);}
-.cat-count-lbl{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);background:var(--surface3);border-radius:8px;padding:1px 7px;}
-.cat-del-btn{width:24px;height:24px;border-radius:6px;border:1px solid transparent;background:none;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15px;flex-shrink:0;}
-.cat-del-btn:hover{border-color:var(--danger);color:var(--danger);}
-.new-cat-row{display:flex;gap:6px;align-items:center;}
-.color-picker-wrap{position:relative;}
-.color-thumb{width:34px;height:34px;border-radius:var(--radius-sm);border:1px solid var(--border2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:.15s;}
-.color-thumb:hover{border-color:var(--accent);}
-.color-picker-popup{position:absolute;top:38px;left:0;z-index:10;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:8px;display:none;grid-template-columns:repeat(6,1fr);gap:5px;width:160px;box-shadow:0 8px 24px rgba(0,0,0,.5);}
-.color-picker-popup.open{display:grid;}
-.color-swatch-opt{width:20px;height:20px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:.15s;}
-.color-swatch-opt:hover,.color-swatch-opt.sel{border-color:#fff;transform:scale(1.15);}
-
-/* group filter tabs */
-.group-filter-bar{padding:6px 12px 8px;border-bottom:1px solid var(--border);overflow-x:auto;display:flex;gap:5px;flex-wrap:wrap;}
-.group-filter-bar::-webkit-scrollbar{display:none;}
-.gftab{font-size:11px;font-weight:600;padding:3px 10px;border-radius:14px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;transition:.2s;white-space:nowrap;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px;flex-shrink:0;}
-.gftab.active{border-color:currentColor;}
-.gftab:hover:not(.active){border-color:var(--border2);color:var(--text);}
-
-/* assign category in add-point modal */
-.cat-select{height:40px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface2);color:var(--text);padding:0 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;width:100%;transition:.2s;}
-.cat-select:focus{border-color:var(--accent);}
-
-/* map-crosshair cursor mode */
 .map-measuring,.map-measuring .leaflet-interactive,.map-adding,.map-adding .leaflet-interactive{cursor:crosshair!important;}
-
-/* ── ADD POINT MODAL (click-on-map) ── */
-.add-point-modal{background:var(--surface);border:1px solid var(--accent2);border-radius:20px;padding:22px;width:320px;box-shadow:0 32px 80px rgba(0,0,0,.7);animation:modal-in .25s var(--ease);display:flex;flex-direction:column;gap:12px;}
-.add-point-modal .modal-title{color:var(--accent2);margin-bottom:0;}
-.coord-display{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted2);background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;letter-spacing:.5px;}
-
-/* ── MOBILE RESPONSIVE ── */
-@media(max-width:900px){
-  body{overflow:auto;}
-
-  /* Sidebar becomes a full-height overlay drawer, collapsed by default */
-  .app-sidebar{position:fixed;top:0;left:0;height:100vh;z-index:1300;box-shadow:0 0 40px rgba(0,0,0,.6);width:0;min-width:0;}
-  .app-sidebar.mobile-open{width:88vw;max-width:340px;min-width:0;}
-  .sidebar-inner{width:88vw;max-width:340px;}
-
-  /* Scrim behind the drawer when open */
-  .sidebar-scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1250;}
-  .sidebar-scrim.visible{display:block;}
-
-  .app-main{width:100vw;}
-
-  .app-header{padding:0 10px;gap:8px;}
-  .app-header h1{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .header-right{gap:5px;}
-  .header-icon-btn{width:34px;height:34px;}
-  .header-icon-btn .ctrl-tooltip{display:none;}
-
-  .map-controls{top:10px;right:10px;}
-  .map-ctrl-btn{width:34px;height:34px;}
-
-  /* Floating panels resize / reposition for small viewports */
-  .info-panel{left:8px;right:8px;bottom:12px;transform:none;min-width:0;max-width:none;padding:14px 16px;}
-  .route-bar{left:8px;right:8px;transform:none;bottom:12px;flex-wrap:wrap;justify-content:center;border-radius:20px;padding:10px 14px;}
-  .steps-panel{right:8px;left:8px;width:auto;max-height:34vh;bottom:12px;top:auto;}
-  .measure-modal,.modal,.cat-modal,.add-point-modal,.pay-modal{width:92vw;max-width:360px;padding:18px;}
-  #measureFloatBar{left:8px;right:8px;transform:none;width:auto;justify-content:center;flex-wrap:wrap;gap:8px;padding:8px 12px;top:10px;}
-  .click-add-banner{left:8px;right:8px;transform:none;width:auto;text-align:center;font-size:11px;white-space:normal;top:10px;}
-  .heat-legend{left:8px;right:8px;transform:none;width:auto;justify-content:center;}
-
-  .sidebar-nav-grid{grid-template-columns:repeat(2,1fr);display:grid;}
-  .action-btn{min-width:0;}
-
-  .sidebar-toggle-btn{width:38px;height:38px;}
-}
-
-@media(max-width:420px){
-  .app-header h1{display:none;}
-  .steps-panel{max-height:30vh;}
-}
 </style>
 </head>
-<body>
+<body class="font-sans bg-bg text-ink">
 
-<div class="loading-bar" id="loadingBar"></div>
-<div class="toast-container" id="toastContainer"></div>
+<div class="loading-bar hidden [&.active]:block fixed top-0 left-0 right-0 z-[5000] h-0.5 bg-gradient-to-r from-accent to-accent2 animate-load-bar" id="loadingBar"></div>
+<div class="toast-container fixed top-4 right-4 z-[4000] flex flex-col gap-1.5 pointer-events-none" id="toastContainer"></div>
 
-<div class="sidebar-scrim" id="sidebarScrim" onclick="toggleSidebar()"></div>
+<div class="sidebar-scrim hidden [&.visible]:block fixed inset-0 bg-black/55 z-[1250]" id="sidebarScrim" onclick="toggleSidebar()"></div>
 
-<div class="app-shell">
+<div class="flex items-stretch h-screen w-full">
 
   <!-- ════ SIDEBAR ════ -->
-  <aside class="app-sidebar" id="appSidebar" aria-label="Sidebar navigation">
-    <div class="sidebar-inner">
+  <aside class="app-sidebar w-[280px] min-w-[280px] h-screen bg-surface border-r border-white/[0.07] flex flex-col overflow-hidden transition-[width,min-width] duration-300 ease-in-out
+    [&.collapsed]:w-0 [&.collapsed]:min-w-0 [&.collapsed]:border-r-0
+    max-md:fixed max-md:top-0 max-md:left-0 max-md:z-[1300] max-md:shadow-[0_0_40px_rgba(0,0,0,.6)] max-md:w-0 max-md:min-w-0
+    max-md:[&.mobile-open]:w-[88vw] max-md:[&.mobile-open]:max-w-[340px] max-md:[&.mobile-open]:min-w-0"
+    id="appSidebar" aria-label="Sidebar navigation">
+    <div class="sidebar-inner w-[280px] max-md:w-[88vw] max-md:max-w-[340px] h-screen flex flex-col overflow-hidden">
 
-      <div class="sidebar-header">
-        <div class="sidebar-logo">MAP<span>TRACK</span></div>
-        <button class="refresh-btn" id="refreshBtn" onclick="manualRefresh()">
+      <div class="flex items-center gap-2.5 px-4 pt-[18px] pb-3.5 border-b border-white/[0.07]">
+        <div class="font-mono text-[15px] font-bold text-accent tracking-wide whitespace-nowrap">MAP<span class="text-accent2">TRACK</span></div>
+        <button class="refresh-btn ml-auto flex-shrink-0 flex items-center gap-1.5 h-[30px] px-2.5 rounded-lg border border-white/[0.12] bg-surface2 text-muted2 text-[11px] font-semibold cursor-pointer uppercase tracking-wide whitespace-nowrap transition hover:border-accent hover:text-accent [&.spinning>svg]:rotate-[360deg] [&>svg]:transition-transform [&>svg]:duration-500" id="refreshBtn" onclick="manualRefresh()">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
             <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
@@ -411,105 +108,105 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);ove
       </div>
 
       <!-- Geocoding Search Bar -->
-      <div class="geocode-bar">
-        <div class="geocode-wrap" style="position:relative;">
-          <input class="geocode-input" id="geocodeInput" placeholder="🔍 Search any location…" onkeydown="if(event.key==='Enter')doGeocode()" oninput="debounceGeocode()"/>
-          <button class="geocode-go" onclick="doGeocode()">
+      <div class="px-4 pt-3.5 pb-2 border-b border-white/[0.07]">
+        <div class="relative flex items-center gap-2">
+          <input class="geocode-input flex-1 h-10 rounded-full border-[1.5px] border-white/[0.12] bg-surface2 text-ink px-4 pr-10 text-sm outline-none transition focus:border-accent focus:shadow-[0_0_0_3px_rgba(0,212,255,.08)] placeholder:text-muted" id="geocodeInput" placeholder="🔍 Search any location…" onkeydown="if(event.key==='Enter')doGeocode()" oninput="debounceGeocode()"/>
+          <button class="absolute right-1.5 w-[30px] h-[30px] rounded-full border-none bg-accent text-black cursor-pointer flex items-center justify-center transition-transform hover:scale-105" onclick="doGeocode()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </button>
-          <div class="geocode-results" id="geocodeResults"></div>
+          <div class="geocode-results absolute top-12 left-0 right-0 bg-surface border border-white/[0.12] rounded-xl z-10 max-h-[220px] overflow-y-auto shadow-2xl empty:hidden" id="geocodeResults"></div>
         </div>
       </div>
 
       <!-- Map Layer Switcher -->
-      <div class="layer-bar">
-        <button class="ltab active" onclick="setLayer('street',this)">🗺 Street</button>
-        <button class="ltab" onclick="setLayer('satellite',this)">🛰 Satellite HD</button>
-        <button class="ltab" onclick="setLayer('hybrid',this)">🏙 Hybrid</button>
-        <button class="ltab" onclick="setLayer('topo',this)">🏔 Topo</button>
-        <button class="ltab" onclick="setLayer('dark',this)">🌑 Dark</button>
+      <div class="layer-bar flex gap-1.5 px-4 py-2.5 border-b border-white/[0.07] overflow-x-auto [&::-webkit-scrollbar]:hidden">
+        <button class="ltab text-[11px] font-semibold tracking-wide px-3 py-1 rounded-full border border-white/[0.07] bg-transparent text-muted cursor-pointer transition whitespace-nowrap flex items-center gap-1 hover:not-[.active]:border-white/[0.12] hover:not-[.active]:text-ink [&.active]:bg-accent/10 [&.active]:border-accent [&.active]:text-accent active" onclick="setLayer('street',this)">🗺 Street</button>
+        <button class="ltab text-[11px] font-semibold tracking-wide px-3 py-1 rounded-full border border-white/[0.07] bg-transparent text-muted cursor-pointer transition whitespace-nowrap flex items-center gap-1 hover:not-[.active]:border-white/[0.12] hover:not-[.active]:text-ink [&.active]:bg-accent/10 [&.active]:border-accent [&.active]:text-accent" onclick="setLayer('satellite',this)">🛰 Satellite HD</button>
+        <button class="ltab text-[11px] font-semibold tracking-wide px-3 py-1 rounded-full border border-white/[0.07] bg-transparent text-muted cursor-pointer transition whitespace-nowrap flex items-center gap-1 hover:not-[.active]:border-white/[0.12] hover:not-[.active]:text-ink [&.active]:bg-accent/10 [&.active]:border-accent [&.active]:text-accent" onclick="setLayer('hybrid',this)">🏙 Hybrid</button>
+        <button class="ltab text-[11px] font-semibold tracking-wide px-3 py-1 rounded-full border border-white/[0.07] bg-transparent text-muted cursor-pointer transition whitespace-nowrap flex items-center gap-1 hover:not-[.active]:border-white/[0.12] hover:not-[.active]:text-ink [&.active]:bg-accent/10 [&.active]:border-accent [&.active]:text-accent" onclick="setLayer('topo',this)">🏔 Topo</button>
+        <button class="ltab text-[11px] font-semibold tracking-wide px-3 py-1 rounded-full border border-white/[0.07] bg-transparent text-muted cursor-pointer transition whitespace-nowrap flex items-center gap-1 hover:not-[.active]:border-white/[0.12] hover:not-[.active]:text-ink [&.active]:bg-accent/10 [&.active]:border-accent [&.active]:text-accent" onclick="setLayer('dark',this)">🌑 Dark</button>
       </div>
 
-      <div class="sidebar-nav">
-        <div class="sidebar-nav-grid">
-          <button class="action-btn" onclick="showUpload()">
+      <div class="px-3 py-2.5 border-b border-white/[0.07]">
+        <div class="grid grid-cols-2 md:flex gap-1.5 flex-wrap">
+          <button class="action-btn flex-1 min-w-[56px] h-9 rounded-lg border border-white/[0.07] bg-surface2 text-ink text-xs font-medium cursor-pointer flex items-center justify-center gap-1.5 transition whitespace-nowrap hover:border-accent hover:bg-accent/[0.06] hover:-translate-y-px" onclick="showUpload()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Add
           </button>
-          <button class="action-btn danger" onclick="showDelete()">
+          <button class="action-btn flex-1 min-w-[56px] h-9 rounded-lg border border-white/[0.07] bg-surface2 text-ink text-xs font-medium cursor-pointer flex items-center justify-center gap-1.5 transition whitespace-nowrap hover:border-danger hover:bg-danger/[0.06] hover:-translate-y-px" onclick="showDelete()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Delete
           </button>
-          <button class="action-btn" onclick="g()">
+          <button class="action-btn flex-1 min-w-[56px] h-9 rounded-lg border border-white/[0.07] bg-surface2 text-ink text-xs font-medium cursor-pointer flex items-center justify-center gap-1.5 transition whitespace-nowrap hover:border-accent hover:bg-accent/[0.06] hover:-translate-y-px" onclick="g()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Pay
           </button>
-          <button class="action-btn route-all" onclick="routeAll()">
+          <button class="action-btn flex-1 min-w-[56px] h-9 rounded-lg border border-white/[0.07] bg-surface2 text-ink text-xs font-medium cursor-pointer flex items-center justify-center gap-1.5 transition whitespace-nowrap hover:border-accent2 hover:bg-accent2/[0.06] hover:text-accent2 hover:-translate-y-px" onclick="routeAll()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M6 17V7a2 2 0 0 1 2-2h8"/><polyline points="14 3 18 7 14 11"/></svg>Route All
           </button>
-          <button class="action-btn" onclick="window.openCatModal()" title="Manage categories">
+          <button class="action-btn flex-1 min-w-[56px] h-9 rounded-lg border border-white/[0.07] bg-surface2 text-ink text-xs font-medium cursor-pointer flex items-center justify-center gap-1.5 transition whitespace-nowrap hover:border-accent hover:bg-accent/[0.06] hover:-translate-y-px" onclick="window.openCatModal()" title="Manage categories">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="6" height="6" rx="1"/><rect x="9" y="3" width="6" height="6" rx="1"/><rect x="16" y="3" width="6" height="6" rx="1"/><rect x="2" y="11" width="6" height="6" rx="1"/><rect x="9" y="11" width="6" height="6" rx="1"/><rect x="16" y="11" width="6" height="6" rx="1"/></svg>Groups
           </button>
-          <button class="action-btn measure-btn" onclick="openMeasureModal()">
+          <button class="action-btn flex-1 min-w-[56px] h-9 rounded-lg border border-white/[0.07] bg-surface2 text-ink text-xs font-medium cursor-pointer flex items-center justify-center gap-1.5 transition whitespace-nowrap hover:border-purple hover:bg-purple/[0.06] hover:text-purple hover:-translate-y-px" onclick="openMeasureModal()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="8" x2="2" y2="16"/><line x1="12" y1="7" x2="12" y2="17"/><line x1="22" y1="8" x2="22" y2="16"/></svg>Measure
           </button>
-          <button class="action-btn heat-btn" onclick="exportCSV()">
+          <button class="action-btn flex-1 min-w-[56px] h-9 rounded-lg border border-white/[0.07] bg-surface2 text-ink text-xs font-medium cursor-pointer flex items-center justify-center gap-1.5 transition whitespace-nowrap hover:border-warn hover:bg-warn/[0.06] hover:text-warn hover:-translate-y-px" onclick="exportCSV()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export
           </button>
         </div>
       </div>
 
       <!-- Delivery search -->
-      <div class="sidebar-search">
-        <div class="search-wrap">
-          <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" id="searchInput" placeholder="Filter delivery points…" oninput="applyFilter()"/>
+      <div class="px-3 pt-2 pb-1">
+        <div class="relative">
+          <svg class="absolute left-[9px] top-1/2 -translate-y-1/2 text-muted pointer-events-none" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="w-full h-9 rounded-lg border border-white/[0.07] bg-surface2 text-ink pl-8 pr-3 text-[13px] outline-none transition focus:border-accent placeholder:text-muted" id="searchInput" placeholder="Filter delivery points…" oninput="applyFilter()"/>
         </div>
       </div>
 
-      <div class="filter-tabs">
-        <button class="ftab active" onclick="setFilter('all',this)">All</button>
-        <button class="ftab" onclick="setFilter('nearby',this)">📍 Nearby</button>
+      <div class="flex gap-1 px-3 pt-1.5 pb-2 overflow-x-auto [&::-webkit-scrollbar]:hidden">
+        <button class="ftab text-[11px] font-semibold tracking-wide px-2.5 py-1 rounded-full border border-white/[0.07] bg-transparent text-muted cursor-pointer transition whitespace-nowrap hover:not-[.active]:border-white/[0.12] hover:not-[.active]:text-ink [&.active]:bg-accent/10 [&.active]:border-accent [&.active]:text-accent active" onclick="setFilter('all',this)">All</button>
+        <button class="ftab text-[11px] font-semibold tracking-wide px-2.5 py-1 rounded-full border border-white/[0.07] bg-transparent text-muted cursor-pointer transition whitespace-nowrap hover:not-[.active]:border-white/[0.12] hover:not-[.active]:text-ink [&.active]:bg-accent/10 [&.active]:border-accent [&.active]:text-accent" onclick="setFilter('nearby',this)">📍 Nearby</button>
       </div>
 
-      <!-- Group / Category filter bar (no "All Groups" tab — click a group to filter, click again to clear) -->
-      <div class="group-filter-bar" id="groupFilterBar"></div>
+      <!-- Group / Category filter bar -->
+      <div class="group-filter-bar px-3 pt-1.5 pb-2 border-b border-white/[0.07] overflow-x-auto flex gap-1.5 flex-wrap [&::-webkit-scrollbar]:hidden" id="groupFilterBar"></div>
 
-      <div class="nearby-bar" id="nearbyBar">
-        <div class="nearby-bar-top">
-          <span class="nearby-bar-title">Max distance</span>
-          <span class="nearby-dist-chip" id="nearbyDistChip">5 km</span>
+      <div class="nearby-bar hidden [&.visible]:flex flex-col gap-2 px-4 pt-2.5 pb-3 border-b border-white/[0.07]" id="nearbyBar">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-semibold tracking-wide text-muted uppercase">Max distance</span>
+          <span class="font-mono text-[13px] font-bold text-accent bg-accent/[0.08] border border-accent/20 rounded-lg px-2.5 py-0.5" id="nearbyDistChip">5 km</span>
         </div>
-        <input type="range" class="nearby-slider" id="nearbySlider" min="0.5" max="50" step="0.5" value="5" oninput="onNearbySlider(this)"/>
-        <div class="nearby-presets">
-          <button class="npreset" onclick="setNearbyPreset(1)">1 km</button>
-          <button class="npreset active" onclick="setNearbyPreset(5)">5 km</button>
-          <button class="npreset" onclick="setNearbyPreset(10)">10 km</button>
-          <button class="npreset" onclick="setNearbyPreset(25)">25 km</button>
-          <button class="npreset" onclick="setNearbyPreset(50)">50 km</button>
+        <input type="range" class="nearby-slider w-full h-1 rounded outline-none cursor-pointer" id="nearbySlider" min="0.5" max="50" step="0.5" value="5" oninput="onNearbySlider(this)"/>
+        <div class="flex gap-1.5 flex-wrap">
+          <button class="npreset text-[10px] font-semibold px-2.5 py-0.5 rounded-full border border-white/[0.07] bg-transparent text-muted cursor-pointer transition hover:border-accent hover:text-accent hover:bg-accent/[0.08] [&.active]:border-accent [&.active]:text-accent [&.active]:bg-accent/[0.08]" onclick="setNearbyPreset(1)">1 km</button>
+          <button class="npreset text-[10px] font-semibold px-2.5 py-0.5 rounded-full border border-white/[0.07] bg-transparent text-muted cursor-pointer transition hover:border-accent hover:text-accent hover:bg-accent/[0.08] [&.active]:border-accent [&.active]:text-accent [&.active]:bg-accent/[0.08] active" onclick="setNearbyPreset(5)">5 km</button>
+          <button class="npreset text-[10px] font-semibold px-2.5 py-0.5 rounded-full border border-white/[0.07] bg-transparent text-muted cursor-pointer transition hover:border-accent hover:text-accent hover:bg-accent/[0.08] [&.active]:border-accent [&.active]:text-accent [&.active]:bg-accent/[0.08]" onclick="setNearbyPreset(10)">10 km</button>
+          <button class="npreset text-[10px] font-semibold px-2.5 py-0.5 rounded-full border border-white/[0.07] bg-transparent text-muted cursor-pointer transition hover:border-accent hover:text-accent hover:bg-accent/[0.08] [&.active]:border-accent [&.active]:text-accent [&.active]:bg-accent/[0.08]" onclick="setNearbyPreset(25)">25 km</button>
+          <button class="npreset text-[10px] font-semibold px-2.5 py-0.5 rounded-full border border-white/[0.07] bg-transparent text-muted cursor-pointer transition hover:border-accent hover:text-accent hover:bg-accent/[0.08] [&.active]:border-accent [&.active]:text-accent [&.active]:bg-accent/[0.08]" onclick="setNearbyPreset(50)">50 km</button>
         </div>
-        <div class="nearby-info">Showing <span class="n-count" id="nearbyCount">—</span> within <span class="n-count" id="nearbyDistInline">5 km</span> · nearest first</div>
+        <div class="text-[11px] text-muted">Showing <span class="font-mono text-accent2 font-bold" id="nearbyCount">—</span> within <span class="font-mono text-accent2 font-bold" id="nearbyDistInline">5 km</span> · nearest first</div>
       </div>
 
-      <div class="sidebar-list-label">
+      <div class="px-4 pt-3 pb-1.5 text-[10px] font-semibold tracking-[1.5px] text-muted uppercase flex items-center justify-between">
         Delivery Points
-        <span class="list-count-badge" id="listCount">0</span>
+        <span class="font-mono text-[10px] text-accent bg-accent/[0.08] border border-accent/[0.15] rounded-full px-1.5 py-0.5" id="listCount">0</span>
       </div>
 
-      <div id="confirmBox" class="confirm-box">
-        <div class="confirm-content">
-          <p>Delete this delivery point?</p>
-          <div class="confirm-btns">
-            <button id="yesBtn">Delete</button>
-            <button id="noBtn">Cancel</button>
+      <div id="confirmBox" class="confirm-box fixed inset-0 z-[3000] bg-black/60 backdrop-blur-md hidden items-center justify-center" style="display:none;">
+        <div class="bg-surface border border-white/[0.12] rounded-2xl p-6 w-[300px] shadow-2xl flex flex-col items-center gap-4 animate-modal-in">
+          <p class="font-mono text-xs tracking-wide text-ink text-center">Delete this delivery point?</p>
+          <div class="flex gap-2.5 w-full">
+            <button id="yesBtn" class="flex-1 h-9 rounded-lg border-none font-sans text-[13px] font-semibold cursor-pointer transition bg-gradient-to-br from-danger to-[#cc2244] text-white">Delete</button>
+            <button id="noBtn" class="flex-1 h-9 rounded-lg border border-white/[0.07] font-sans text-[13px] font-semibold cursor-pointer transition bg-surface2 text-ink">Cancel</button>
           </div>
         </div>
       </div>
 
-      <div id="display_items"></div>
+      <div id="display_items" class="flex-1 overflow-y-auto px-2.5 pt-1 pb-3 flex flex-col gap-1.5"></div>
 
-      <div class="sidebar-footer">
-        <div class="gps-dot" id="gpsDot"></div>
+      <div class="flex items-center gap-2.5 px-3.5 py-3 border-t border-white/[0.07]">
+        <div class="gps-dot w-2.5 h-2.5 rounded-full bg-muted flex-shrink-0 [&.live]:bg-accent2 [&.live]:shadow-[0_0_0_4px_rgba(0,255,136,.18)]" id="gpsDot"></div>
         <div>
-          <div class="gps-text" id="gpsText">Locating…</div>
-          <div class="gps-sub">Live GPS status</div>
+          <div class="text-xs text-muted2" id="gpsText">Locating…</div>
+          <div class="text-[10px] text-muted">Live GPS status</div>
         </div>
       </div>
 
@@ -517,104 +214,104 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);ove
   </aside>
 
   <!-- ════ MAIN ════ -->
-  <div class="app-main">
+  <div class="flex-1 min-w-0 h-screen flex flex-col relative max-md:w-screen">
 
-    <header class="app-header">
-      <button class="sidebar-toggle-btn" id="sidebarToggleBtn" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+    <header class="h-16 min-h-16 flex items-center gap-3.5 px-[18px] bg-surface border-b border-white/[0.07] z-[950] max-md:px-2.5 max-md:gap-2">
+      <button class="w-9 h-9 rounded-lg bg-transparent border border-white/[0.12] cursor-pointer flex items-center justify-center text-ink transition flex-shrink-0 hover:border-accent hover:text-accent max-md:w-[38px] max-md:h-[38px]" id="sidebarToggleBtn" onclick="toggleSidebar()" aria-label="Toggle sidebar">
         <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
           <path fill-rule="evenodd" d="M.13 17.05a1.41 1.41 0 0 1 1.41-1.41H10a1.41 1.41 0 1 1 0 2.82H1.54a1.41 1.41 0 0 1-1.41-1.41zm0-14.1a1.41 1.41 0 0 1 1.41-1.41h16.92a1.41 1.41 0 1 1 0 2.82H1.54A1.41 1.41 0 0 1 .13 2.95zm0 7.05a1.41 1.41 0 0 1 1.41-1.41h16.92a1.41 1.41 0 1 1 0 2.82H1.54A1.41 1.41 0 0 1 .13 10z" clip-rule="evenodd"/>
         </svg>
       </button>
-      <h1>MAP<span>TRACK</span> — HD Live Delivery Map</h1>
-      <div class="header-right">
-        <button class="header-icon-btn" onclick="toggleHeatmap(this)" title="Heatmap" id="heatBtn">
+      <h1 class="font-mono text-[15px] font-bold tracking-wide text-ink max-md:text-xs max-md:whitespace-nowrap max-md:overflow-hidden max-md:text-ellipsis max-[420px]:hidden">MAP<span class="text-accent">TRACK</span> — HD Live Delivery Map</h1>
+      <div class="flex items-center gap-2 ml-auto max-md:gap-1.5">
+        <button class="header-icon-btn group relative w-[38px] h-[38px] rounded-lg border border-white/[0.12] bg-surface2 text-muted2 cursor-pointer flex items-center justify-center transition hover:border-accent hover:text-accent [&.active]:border-accent2 [&.active]:text-accent2 [&.active]:bg-accent2/[0.08] max-md:w-[34px] max-md:h-[34px]" onclick="toggleHeatmap(this)" title="Heatmap" id="heatBtn">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 2c2.5 4 4 7 4 10a4 4 0 0 1-8 0c0-3 1.5-6 4-10z"/></svg>
-          <span class="ctrl-tooltip">Heatmap</span>
+          <span class="absolute top-11 right-0 bg-surface border border-white/[0.12] rounded-lg px-2.5 py-1 text-[11px] whitespace-nowrap pointer-events-none opacity-0 transition group-hover:opacity-100 max-md:hidden">Heatmap</span>
         </button>
-        <button class="header-icon-btn" onclick="toggleAddMode(this)" id="addModeBtn" title="Click to add">
+        <button class="header-icon-btn group relative w-[38px] h-[38px] rounded-lg border border-white/[0.12] bg-surface2 text-muted2 cursor-pointer flex items-center justify-center transition hover:border-accent hover:text-accent [&.active]:border-accent2 [&.active]:text-accent2 [&.active]:bg-accent2/[0.08] max-md:w-[34px] max-md:h-[34px]" onclick="toggleAddMode(this)" id="addModeBtn" title="Click to add">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 1 8 8c0 5-8 12-8 12S4 15 4 10a8 8 0 0 1 8-8z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="10" y1="10" x2="14" y2="10"/></svg>
-          <span class="ctrl-tooltip">Click to add point</span>
+          <span class="absolute top-11 right-0 bg-surface border border-white/[0.12] rounded-lg px-2.5 py-1 text-[11px] whitespace-nowrap pointer-events-none opacity-0 transition group-hover:opacity-100 max-md:hidden">Click to add point</span>
         </button>
-        <button class="header-icon-btn" onclick="flyToUser()" title="My location">
+        <button class="header-icon-btn group relative w-[38px] h-[38px] rounded-lg border border-white/[0.12] bg-surface2 text-muted2 cursor-pointer flex items-center justify-center transition hover:border-accent hover:text-accent max-md:w-[34px] max-md:h-[34px]" onclick="flyToUser()" title="My location">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L12 22M2 12L22 12"/><circle cx="12" cy="12" r="4"/></svg>
-          <span class="ctrl-tooltip">My location</span>
+          <span class="absolute top-11 right-0 bg-surface border border-white/[0.12] rounded-lg px-2.5 py-1 text-[11px] whitespace-nowrap pointer-events-none opacity-0 transition group-hover:opacity-100 max-md:hidden">My location</span>
         </button>
-        <button class="header-icon-btn" onclick="toggleFullscreen()" title="Fullscreen">
+        <button class="header-icon-btn group relative w-[38px] h-[38px] rounded-lg border border-white/[0.12] bg-surface2 text-muted2 cursor-pointer flex items-center justify-center transition hover:border-accent hover:text-accent max-md:w-[34px] max-md:h-[34px]" onclick="toggleFullscreen()" title="Fullscreen">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="fsIcon"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M16 21h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-          <span class="ctrl-tooltip">Fullscreen</span>
+          <span class="absolute top-11 right-0 bg-surface border border-white/[0.12] rounded-lg px-2.5 py-1 text-[11px] whitespace-nowrap pointer-events-none opacity-0 transition group-hover:opacity-100 max-md:hidden">Fullscreen</span>
         </button>
       </div>
     </header>
 
-    <div class="map-wrap">
+    <div class="map-wrap relative flex-1 min-h-0">
       <!-- Click-to-add banner -->
-      <div class="click-add-banner" id="clickAddBanner">📍 Click anywhere on the map to place a delivery point — Press Esc to cancel</div>
+      <div class="click-add-banner hidden [&.visible]:block absolute top-4 left-1/2 -translate-x-1/2 bg-accent2/[0.12] border border-accent2 rounded-full py-[7px] px-[18px] text-xs text-accent2 z-[900] animate-slide-down whitespace-nowrap font-semibold tracking-wide max-md:left-2 max-md:right-2 max-md:translate-x-0 max-md:w-auto max-md:text-center max-md:text-[11px] max-md:whitespace-normal max-md:top-2.5" id="clickAddBanner">📍 Click anywhere on the map to place a delivery point — Press Esc to cancel</div>
 
       <!-- Heatmap legend -->
-      <div class="heat-legend" id="heatLegend">
-        <span>Low</span><div class="heat-grad"></div><span>High</span><span style="margin-left:4px;color:var(--warn)">Delivery Density</span>
+      <div class="heat-legend hidden [&.visible]:flex absolute bottom-5 left-1/2 -translate-x-1/2 bg-surface border border-white/[0.12] rounded-full py-1.5 px-4 items-center gap-2.5 z-[850] text-[11px] text-muted shadow-xl max-md:left-2 max-md:right-2 max-md:translate-x-0 max-md:w-auto max-md:justify-center" id="heatLegend">
+        <span>Low</span><div class="w-20 h-2 rounded" style="background:linear-gradient(to right,blue,cyan,lime,yellow,red)"></div><span>High</span><span class="ml-1 text-warn">Delivery Density</span>
       </div>
 
-      <!-- Floating Measure Bar (shown while measuring, replaces modal) -->
-      <div id="measureFloatBar" style="display:none;position:absolute;top:16px;left:50%;transform:translateX(-50%);z-index:1200;background:rgba(15,20,28,0.97);border:1px solid #a78bfa;border-radius:50px;padding:8px 20px;align-items:center;gap:14px;box-shadow:0 6px 28px rgba(167,139,250,0.25);white-space:nowrap;">
-        <span style="font-size:11px;color:#a78bfa;font-weight:700;letter-spacing:1px;text-transform:uppercase;">📐 MEASURING</span>
-        <div style="width:1px;height:20px;background:rgba(255,255,255,0.1)"></div>
-        <div style="display:flex;flex-direction:column;align-items:center;">
-          <span style="font-family:Space Mono,monospace;font-size:14px;font-weight:700;color:#00ff88;" id="mfDist">—</span>
-          <span style="font-size:9px;color:#5a6878;letter-spacing:.8px;text-transform:uppercase;">Distance</span>
+      <!-- Floating Measure Bar -->
+      <div id="measureFloatBar" class="hidden absolute top-4 left-1/2 -translate-x-1/2 z-[1200] bg-[rgba(15,20,28,0.97)] border border-purple rounded-full py-2 px-5 items-center gap-3.5 shadow-[0_6px_28px_rgba(167,139,250,0.25)] whitespace-nowrap max-md:left-2 max-md:right-2 max-md:translate-x-0 max-md:w-auto max-md:justify-center max-md:flex-wrap max-md:gap-2 max-md:top-2.5">
+        <span class="text-[11px] text-purple font-bold tracking-wide uppercase">📐 MEASURING</span>
+        <div class="w-px h-5 bg-white/10"></div>
+        <div class="flex flex-col items-center">
+          <span class="font-mono text-sm font-bold text-accent2" id="mfDist">—</span>
+          <span class="text-[9px] text-muted tracking-wide uppercase">Distance</span>
         </div>
-        <div style="width:1px;height:20px;background:rgba(255,255,255,0.1)"></div>
-        <div style="display:flex;flex-direction:column;align-items:center;">
-          <span style="font-family:Space Mono,monospace;font-size:14px;font-weight:700;color:#a78bfa;" id="mfPts">0</span>
-          <span style="font-size:9px;color:#5a6878;letter-spacing:.8px;text-transform:uppercase;">Points</span>
+        <div class="w-px h-5 bg-white/10"></div>
+        <div class="flex flex-col items-center">
+          <span class="font-mono text-sm font-bold text-purple" id="mfPts">0</span>
+          <span class="text-[9px] text-muted tracking-wide uppercase">Points</span>
         </div>
-        <button onclick="window.toggleMeasureActive()" style="height:30px;padding:0 14px;border-radius:20px;border:none;background:#ff4d6d;color:#fff;font-family:DM Sans,sans-serif;font-size:12px;font-weight:700;cursor:pointer;margin-left:4px;">Stop ■</button>
+        <button onclick="window.toggleMeasureActive()" class="h-[30px] px-3.5 rounded-full border-none bg-danger text-white font-sans text-xs font-bold cursor-pointer ml-1">Stop ■</button>
       </div>
 
-      <div id="map"></div>
+      <div id="map" class="h-full w-full"></div>
 
-      <!-- Route bar (route-all summary) -->
-      <div class="route-bar" id="routeBar">
-        <div class="route-bar-stat"><span class="route-bar-val" id="rb-dist">—</span><span class="route-bar-lbl">Distance</span></div>
-        <div class="route-bar-div"></div>
-        <div class="route-bar-stat"><span class="route-bar-val" id="rb-time">—</span><span class="route-bar-lbl">Est. Time</span></div>
-        <div class="route-bar-div"></div>
-        <div class="route-bar-stat"><span class="route-bar-val" id="rb-stops">—</span><span class="route-bar-lbl">Stops</span></div>
-        <button class="route-bar-close" onclick="clearRouteAll()">✕</button>
+      <!-- Route bar -->
+      <div class="route-bar hidden [&.visible]:flex absolute bottom-5 left-1/2 -translate-x-1/2 bg-[rgba(15,20,28,.96)] backdrop-blur-md border border-accent2 rounded-full py-2 px-5 items-center gap-3.5 z-[900] shadow-[0_6px_28px_rgba(0,255,136,.15)] text-[13px] whitespace-nowrap animate-slide-up-c max-md:left-2 max-md:right-2 max-md:translate-x-0 max-md:flex-wrap max-md:justify-center max-md:rounded-[20px] max-md:py-2.5 max-md:px-3.5" id="routeBar">
+        <div class="flex flex-col items-center gap-px"><span class="font-mono text-sm font-bold text-accent2" id="rb-dist">—</span><span class="text-[9px] text-muted tracking-wide uppercase">Distance</span></div>
+        <div class="w-px h-6 bg-white/[0.07]"></div>
+        <div class="flex flex-col items-center gap-px"><span class="font-mono text-sm font-bold text-accent2" id="rb-time">—</span><span class="text-[9px] text-muted tracking-wide uppercase">Est. Time</span></div>
+        <div class="w-px h-6 bg-white/[0.07]"></div>
+        <div class="flex flex-col items-center gap-px"><span class="font-mono text-sm font-bold text-accent2" id="rb-stops">—</span><span class="text-[9px] text-muted tracking-wide uppercase">Stops</span></div>
+        <button class="w-6 h-6 rounded-full border border-white/[0.07] bg-transparent text-muted cursor-pointer text-[13px] flex items-center justify-center transition hover:border-danger hover:text-danger ml-1" onclick="clearRouteAll()">✕</button>
       </div>
 
       <!-- Turn-by-turn steps panel -->
-      <div class="steps-panel" id="stepsPanel">
-        <div class="steps-header">
-          <span class="steps-title">Turn-by-Turn</span>
-          <button class="steps-close" onclick="closeSteps()">✕</button>
+      <div class="steps-panel hidden [&.visible]:flex absolute bottom-5 right-4 z-[900] bg-surface border border-white/[0.12] rounded-2xl w-[180px] max-h-40 shadow-2xl flex-col overflow-hidden animate-slide-in-right max-md:right-2 max-md:left-2 max-md:w-auto max-md:max-h-[34vh] max-md:bottom-3 max-md:top-auto max-[420px]:max-h-[30vh]" id="stepsPanel">
+        <div class="flex items-center justify-between px-3.5 py-3 border-b border-white/[0.07]">
+          <span class="text-xs font-semibold text-accent2 tracking-wide uppercase">Turn-by-Turn</span>
+          <button class="w-6 h-6 rounded-full border-none bg-transparent text-muted cursor-pointer text-[13px] flex items-center justify-center transition hover:text-danger" onclick="closeSteps()">✕</button>
         </div>
-        <div class="steps-summary">
-          <div class="route-bar-stat"><span class="step-sum-val" id="sp-dist">—</span><span class="step-sum-lbl">Distance</span></div>
-          <div class="route-bar-stat"><span class="step-sum-val" id="sp-time">—</span><span class="step-sum-lbl">Est. Time</span></div>
+        <div class="flex gap-4 px-3.5 py-2.5 bg-accent2/[0.04] border-b border-white/[0.07]">
+          <div class="flex flex-col items-center gap-px"><span class="font-mono text-sm font-bold text-accent2" id="sp-dist">—</span><span class="text-[10px] text-muted tracking-wide uppercase">Distance</span></div>
+          <div class="flex flex-col items-center gap-px"><span class="font-mono text-sm font-bold text-accent2" id="sp-time">—</span><span class="text-[10px] text-muted tracking-wide uppercase">Est. Time</span></div>
         </div>
-        <div class="steps-list" id="stepsList"></div>
+        <div class="flex-1 overflow-y-auto py-2" id="stepsList"></div>
       </div>
 
       <!-- Pin info panel -->
-      <div class="info-panel" id="infoPanel">
-        <div class="info-panel-header">
+      <div class="info-panel hidden [&.visible]:block absolute bottom-5 left-1/2 -translate-x-1/2 z-[900] bg-surface border border-white/[0.12] rounded-2xl p-4 pt-4 min-w-[300px] max-w-[420px] shadow-2xl animate-slide-up-c max-md:left-2 max-md:right-2 max-md:translate-x-0 max-md:bottom-3 max-md:min-w-0 max-md:max-w-none max-md:p-3.5" id="infoPanel">
+        <div class="flex items-start justify-between gap-3 mb-3">
           <div>
-            <div class="info-pin-name" id="infoPinName">—</div>
-            <div class="info-pin-coords" id="infoPinCoords">—</div>
+            <div class="text-base font-semibold text-ink" id="infoPinName">—</div>
+            <div class="font-mono text-[10px] text-muted mt-0.5" id="infoPinCoords">—</div>
           </div>
-          <button class="info-close" onclick="closeInfoPanel()">✕</button>
+          <button class="w-[26px] h-[26px] rounded-full border border-white/[0.07] bg-transparent text-muted cursor-pointer text-sm flex-shrink-0 flex items-center justify-center transition hover:border-danger hover:text-danger" onclick="closeInfoPanel()">✕</button>
         </div>
-        <div class="info-row">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 2c2.5 4 4 7 4 10"/></svg>
+        <div class="flex items-center gap-2 text-xs text-muted2 py-1 border-b border-white/[0.07]">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="text-accent flex-shrink-0" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 2c2.5 4 4 7 4 10"/></svg>
           <span id="infoDistTxt">—</span>
         </div>
-        <div class="info-actions">
-          <button class="info-act-btn" onclick="infoCopyCoords()">
+        <div class="flex gap-2 mt-3">
+          <button class="flex-1 h-9 rounded-lg border border-white/[0.07] bg-surface2 text-ink text-xs font-medium cursor-pointer transition flex items-center justify-center gap-1.5 hover:border-accent hover:text-accent" onclick="infoCopyCoords()">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             Copy coords
           </button>
-          <button class="info-act-btn primary" id="infoRouteBtn">
+          <button class="flex-1 h-9 rounded-lg border border-accent bg-accent text-black text-xs font-medium cursor-pointer transition flex items-center justify-center gap-1.5 hover:opacity-90" id="infoRouteBtn">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 8 14 12"/><path d="M2 12h16"/></svg>
             Navigate
           </button>
@@ -625,104 +322,102 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);ove
 </div>
 
 <!-- MEASURE MODAL -->
-<div class="modal-overlay" id="measureModal">
-  <div class="measure-modal">
-    <div class="modal-title">📐 MEASURE DISTANCE <button class="modal-close" onclick="closeMeasureModal()">✕</button></div>
-    <div class="measure-hint-box">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+<div class="modal-overlay hidden [&.open]:flex fixed inset-0 z-[2000] bg-black/65 backdrop-blur items-center justify-center" id="measureModal">
+  <div class="bg-surface border border-purple/[0.35] rounded-2xl p-[22px] w-[360px] shadow-2xl animate-modal-in flex flex-col gap-3 max-md:w-[92vw] max-md:max-w-[360px] max-md:p-[18px]">
+    <div class="text-xs tracking-wide text-purple flex items-center justify-between">📐 MEASURE DISTANCE <button class="w-[26px] h-[26px] rounded-lg border border-white/[0.07] bg-transparent text-muted cursor-pointer text-sm flex items-center justify-center transition hover:border-danger hover:text-danger" onclick="closeMeasureModal()">✕</button></div>
+    <div class="flex items-start gap-2 py-[9px] px-3 bg-purple/[0.05] border border-purple/[0.15] rounded-lg text-xs text-purple/90 leading-relaxed">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0 mt-px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       <span id="measureHintTxt">Press <b>Start</b> then click points on the map.</span>
     </div>
-    <div class="measure-stats">
-      <div class="measure-stat"><div class="mstat-label">Total Distance</div><div class="mstat-val" id="mTotalDist">—</div></div>
-      <div class="measure-stat"><div class="mstat-label">Last Segment</div><div class="mstat-val" id="mLastSeg">—</div></div>
-      <div class="measure-stat"><div class="mstat-label">Points</div><div class="mstat-val" id="mPtCount">0</div></div>
-      <div class="measure-stat"><div class="mstat-label">Avg Segment</div><div class="mstat-val" id="mAvgSeg">—</div></div>
+    <div class="grid grid-cols-2 gap-[7px]">
+      <div class="bg-surface2 border border-white/[0.07] rounded-lg py-[9px] px-[11px]"><div class="text-[10px] text-muted tracking-wide uppercase">Total Distance</div><div class="font-mono text-sm font-bold text-accent2" id="mTotalDist">—</div></div>
+      <div class="bg-surface2 border border-white/[0.07] rounded-lg py-[9px] px-[11px]"><div class="text-[10px] text-muted tracking-wide uppercase">Last Segment</div><div class="font-mono text-sm font-bold text-accent2" id="mLastSeg">—</div></div>
+      <div class="bg-surface2 border border-white/[0.07] rounded-lg py-[9px] px-[11px]"><div class="text-[10px] text-muted tracking-wide uppercase">Points</div><div class="font-mono text-sm font-bold text-accent2" id="mPtCount">0</div></div>
+      <div class="bg-surface2 border border-white/[0.07] rounded-lg py-[9px] px-[11px]"><div class="text-[10px] text-muted tracking-wide uppercase">Avg Segment</div><div class="font-mono text-sm font-bold text-accent2" id="mAvgSeg">—</div></div>
     </div>
-    <div class="measure-pts-scroll" id="measurePtsList"></div>
-    <div class="measure-actions">
-      <button class="maction start" id="measureToggleBtn" onclick="toggleMeasureActive()">▶ Start</button>
-      <button class="maction clear" onclick="clearMeasure()">Clear</button>
+    <div class="measure-pts-scroll max-h-[100px] overflow-y-auto flex flex-col gap-[3px]" id="measurePtsList"></div>
+    <div class="flex gap-2">
+      <button class="flex-1 h-[38px] rounded-lg border-none font-sans text-[13px] font-semibold cursor-pointer flex items-center justify-center gap-1.5 transition bg-gradient-to-br from-purple to-[#7c3aed] text-white [&.stop]:from-danger [&.stop]:to-[#cc2244]" id="measureToggleBtn" onclick="toggleMeasureActive()">▶ Start</button>
+      <button class="flex-none w-[70px] h-[38px] rounded-lg border border-white/[0.07] font-sans text-[13px] font-semibold cursor-pointer transition bg-surface2 text-muted" onclick="clearMeasure()">Clear</button>
     </div>
   </div>
 </div>
 
-
 <!-- Manage Categories Modal -->
-<div class="modal-overlay" id="catModal">
-  <div class="cat-modal">
-    <div class="modal-title" style="color:var(--purple)">🗂 MANAGE GROUPS <button class="modal-close" onclick="closeModal('catModal')">✕</button></div>
+<div class="modal-overlay hidden [&.open]:flex fixed inset-0 z-[2000] bg-black/65 backdrop-blur items-center justify-center" id="catModal">
+  <div class="bg-surface border border-white/[0.12] rounded-2xl p-6 w-[380px] max-h-[88vh] overflow-y-auto shadow-2xl animate-modal-in flex flex-col gap-3.5 max-md:w-[92vw] max-md:max-w-[360px] max-md:p-[18px]">
+    <div class="text-xs tracking-wide text-purple flex items-center justify-between">🗂 MANAGE GROUPS <button class="w-[26px] h-[26px] rounded-lg border border-white/[0.07] bg-transparent text-muted cursor-pointer text-sm flex items-center justify-center transition hover:border-danger hover:text-danger" onclick="closeModal('catModal')">✕</button></div>
 
-    <!-- existing categories list -->
-    <div class="cat-list" id="catList"></div>
+    <div class="cat-list flex flex-col gap-1.5 max-h-[240px] overflow-y-auto" id="catList"></div>
 
-    <!-- add new category -->
-    <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-top:4px;">New Group</div>
-    <div class="new-cat-row">
-      <div class="color-picker-wrap">
-        <div class="color-thumb" id="newCatColorThumb" onclick="toggleColorPicker()" style="background:#00d4ff;">
-        </div>
-        <div class="color-picker-popup" id="colorPickerPopup"></div>
+    <div class="text-[10px] font-bold tracking-wide text-muted uppercase mt-1">New Group</div>
+    <div class="flex gap-1.5 items-center">
+      <div class="relative">
+        <div class="w-[34px] h-[34px] rounded-lg border border-white/[0.12] cursor-pointer flex items-center justify-center text-base transition hover:border-accent" id="newCatColorThumb" onclick="toggleColorPicker()" style="background:#00d4ff;"></div>
+        <div class="color-picker-popup hidden [&.open]:grid absolute top-[38px] left-0 z-10 bg-surface border border-white/[0.12] rounded-xl p-2 gap-[5px] w-40 shadow-2xl grid-cols-6" id="colorPickerPopup"></div>
       </div>
-      <input type="text" id="newCatName" class="field-input" style="flex:1" placeholder="Group name e.g. Zone A"/>
-      <button onclick="window.addCategory()" style="height:40px;padding:0 14px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:#000;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Add</button>
+      <input type="text" id="newCatName" class="flex-1 h-10 rounded-lg border border-white/[0.07] bg-surface2 text-ink px-3 text-[13px] outline-none transition focus:border-accent" placeholder="Group name e.g. Zone A"/>
+      <button onclick="window.addCategory()" class="h-10 px-3.5 rounded-lg border-none bg-accent text-black font-sans text-[13px] font-bold cursor-pointer">Add</button>
     </div>
-    <div class="modal-msg" id="cat_msg"></div>
+    <div class="text-xs min-h-4 mt-0.5 text-danger" id="cat_msg"></div>
 
-    <div style="font-size:11px;color:var(--muted);line-height:1.6;border-top:1px solid var(--border);padding-top:10px;">
+    <div class="text-[11px] text-muted leading-relaxed border-t border-white/[0.07] pt-2.5">
       Assign groups when adding points via the map. Markers will be color-coded and you can filter by group in the sidebar.
     </div>
   </div>
 </div>
 
 <!-- Upload Modal -->
-<div class="modal-overlay" id="uploadModal">
-  <div class="modal">
-    <div class="modal-title">ADD ITEM <button class="modal-close" onclick="closeModal('uploadModal')">✕</button></div>
-    <div class="modal-fields">
-      <div class="field-group"><div class="field-label">Image</div><input type="file" id="images" class="field-input" accept="image/*"/></div>
-      <div class="field-group"><div class="field-label">Item Name</div><input type="text" id="names" class="field-input" placeholder="e.g. Package #001"/></div>
-      <div class="field-group"><div class="field-label">Amount</div><input type="number" id="numbers" class="field-input" placeholder="e.g. 250"/></div>
-      <div class="modal-msg" id="upload_msg"></div>
-      <button class="modal-submit" onclick="chintu()">Upload Item</button>
+<div class="modal-overlay hidden [&.open]:flex fixed inset-0 z-[2000] bg-black/65 backdrop-blur items-center justify-center" id="uploadModal">
+  <div class="bg-surface border border-white/[0.12] rounded-2xl p-6 w-[340px] shadow-2xl animate-modal-in max-md:w-[92vw] max-md:max-w-[360px] max-md:p-[18px]">
+    <div class="text-xs tracking-wide text-accent mb-[18px] flex items-center justify-between">ADD ITEM <button class="w-[26px] h-[26px] rounded-lg border border-white/[0.07] bg-transparent text-muted cursor-pointer text-sm flex items-center justify-center transition hover:border-danger hover:text-danger" onclick="closeModal('uploadModal')">✕</button></div>
+    <div class="flex flex-col gap-2.5">
+      <div class="flex flex-col gap-1"><div class="text-[10px] font-semibold tracking-wide text-muted uppercase">Image</div><input type="file" id="images" class="h-auto py-2 px-3 rounded-lg border border-white/[0.07] bg-surface2 text-ink text-[13px] outline-none cursor-pointer transition focus:border-accent" accept="image/*"/></div>
+      <div class="flex flex-col gap-1"><div class="text-[10px] font-semibold tracking-wide text-muted uppercase">Item Name</div><input type="text" id="names" class="h-10 rounded-lg border border-white/[0.07] bg-surface2 text-ink px-3 text-[13px] outline-none transition focus:border-accent" placeholder="e.g. Package #001"/></div>
+      <div class="flex flex-col gap-1"><div class="text-[10px] font-semibold tracking-wide text-muted uppercase">Amount</div><input type="number" id="numbers" class="h-10 rounded-lg border border-white/[0.07] bg-surface2 text-ink px-3 text-[13px] outline-none transition focus:border-accent" placeholder="e.g. 250"/></div>
+      <div class="text-xs min-h-4 mt-0.5 text-danger" id="upload_msg"></div>
+      <button class="w-full h-[42px] rounded-xl border-none bg-gradient-to-br from-accent to-[#0099cc] text-black font-sans text-sm font-semibold cursor-pointer mt-1 transition hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(0,212,255,.3)]" onclick="chintu()">Upload Item</button>
     </div>
   </div>
 </div>
 
 <!-- Delete Modal -->
-<div class="modal-overlay" id="deleteModal">
-  <div class="modal">
-    <div class="modal-title">DELETE ITEM <button class="modal-close" onclick="closeModal('deleteModal')">✕</button></div>
-    <div class="modal-fields">
-      <div class="field-group"><div class="field-label">Item Name</div><input type="text" id="nam" class="field-input" placeholder="Enter exact name"/></div>
-      <div class="field-group"><div class="field-label">Amount</div><input type="number" id="amu" class="field-input" placeholder="Enter exact amount"/></div>
-      <div class="modal-msg" id="delete_msg"></div>
-      <button class="modal-submit danger-submit" onclick="delete_btn()">Delete Item</button>
+<div class="modal-overlay hidden [&.open]:flex fixed inset-0 z-[2000] bg-black/65 backdrop-blur items-center justify-center" id="deleteModal">
+  <div class="bg-surface border border-white/[0.12] rounded-2xl p-6 w-[340px] shadow-2xl animate-modal-in max-md:w-[92vw] max-md:max-w-[360px] max-md:p-[18px]">
+    <div class="text-xs tracking-wide text-accent mb-[18px] flex items-center justify-between">DELETE ITEM <button class="w-[26px] h-[26px] rounded-lg border border-white/[0.07] bg-transparent text-muted cursor-pointer text-sm flex items-center justify-center transition hover:border-danger hover:text-danger" onclick="closeModal('deleteModal')">✕</button></div>
+    <div class="flex flex-col gap-2.5">
+      <div class="flex flex-col gap-1"><div class="text-[10px] font-semibold tracking-wide text-muted uppercase">Item Name</div><input type="text" id="nam" class="h-10 rounded-lg border border-white/[0.07] bg-surface2 text-ink px-3 text-[13px] outline-none transition focus:border-accent" placeholder="Enter exact name"/></div>
+      <div class="flex flex-col gap-1"><div class="text-[10px] font-semibold tracking-wide text-muted uppercase">Amount</div><input type="number" id="amu" class="h-10 rounded-lg border border-white/[0.07] bg-surface2 text-ink px-3 text-[13px] outline-none transition focus:border-accent" placeholder="Enter exact amount"/></div>
+      <div class="text-xs min-h-4 mt-0.5 text-danger" id="delete_msg"></div>
+      <button class="w-full h-[42px] rounded-xl border-none bg-gradient-to-br from-danger to-[#cc2244] text-white font-sans text-sm font-semibold cursor-pointer mt-1 transition hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(0,212,255,.3)]" onclick="delete_btn()">Delete Item</button>
     </div>
   </div>
 </div>
 
 <!-- Click-on-map Add Point Modal -->
-<div class="modal-overlay" id="addPointModal">
-  <div class="add-point-modal">
-    <div class="modal-title">📍 ADD DELIVERY POINT <button class="modal-close" onclick="closeModal('addPointModal')">✕</button></div>
-    <div class="coord-display" id="addPointCoords">—</div>
-    <div class="modal-fields">
-      <div class="field-group"><div class="field-label">Name</div><input type="text" id="addPointName" class="field-input" placeholder="e.g. Customer #42"/></div>
-      <div class="field-group"><div class="field-label">Category</div><select id="addPointCat" class="cat-select"><option value="">— No category —</option></select></div>
-      <div class="modal-msg" id="addpoint_msg"></div>
-      <button class="modal-submit" style="background:linear-gradient(135deg,var(--accent2),#00cc66);color:#000;" onclick="saveClickedPoint()">Save Point</button>
+<div class="modal-overlay hidden [&.open]:flex fixed inset-0 z-[2000] bg-black/65 backdrop-blur items-center justify-center" id="addPointModal">
+  <div class="bg-surface border border-accent2 rounded-2xl p-[22px] w-80 shadow-2xl animate-modal-in flex flex-col gap-3 max-md:w-[92vw] max-md:max-w-[360px] max-md:p-[18px]">
+    <div class="text-xs tracking-wide text-accent2 flex items-center justify-between">📍 ADD DELIVERY POINT <button class="w-[26px] h-[26px] rounded-lg border border-white/[0.07] bg-transparent text-muted cursor-pointer text-sm flex items-center justify-center transition hover:border-danger hover:text-danger" onclick="closeModal('addPointModal')">✕</button></div>
+    <div class="font-mono text-[11px] text-muted2 bg-surface2 border border-white/[0.07] rounded-lg py-2 px-3 tracking-wide" id="addPointCoords">—</div>
+    <div class="flex flex-col gap-2.5">
+      <div class="flex flex-col gap-1"><div class="text-[10px] font-semibold tracking-wide text-muted uppercase">Name</div><input type="text" id="addPointName" class="h-10 rounded-lg border border-white/[0.07] bg-surface2 text-ink px-3 text-[13px] outline-none transition focus:border-accent" placeholder="e.g. Customer #42"/></div>
+      <div class="flex flex-col gap-1"><div class="text-[10px] font-semibold tracking-wide text-muted uppercase">Category</div>
+        <select id="addPointCat" class="h-10 rounded-lg border border-white/[0.07] bg-surface2 text-ink px-3 text-[13px] outline-none w-full transition focus:border-accent"><option value="">— No category —</option></select>
+      </div>
+      <div class="text-xs min-h-4 mt-0.5 text-danger" id="addpoint_msg"></div>
+      <button class="w-full h-[42px] rounded-xl border-none bg-gradient-to-br from-accent2 to-[#00cc66] text-black font-sans text-sm font-semibold cursor-pointer mt-1 transition hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(0,212,255,.3)]" onclick="saveClickedPoint()">Save Point</button>
     </div>
   </div>
 </div>
 
 <!-- Payment Modal -->
-<div class="modal-overlay" id="paymentModal">
-  <div class="pay-modal">
-    <div class="modal-title" style="width:100%">PAYMENT <button class="modal-close" onclick="closePayment()">✕</button></div>
-    <button class="qr-toggle-btn" id="qrToggleBtn" onclick="toggleQR()">
+<div class="modal-overlay hidden [&.open]:flex fixed inset-0 z-[2000] bg-black/65 backdrop-blur items-center justify-center" id="paymentModal">
+  <div class="bg-surface border border-white/[0.12] rounded-2xl p-6 w-[260px] shadow-2xl animate-modal-in flex flex-col items-center gap-4 max-md:w-[92vw] max-md:max-w-[360px] max-md:p-[18px]">
+    <div class="text-xs tracking-wide text-accent w-full flex items-center justify-between">PAYMENT <button class="w-[26px] h-[26px] rounded-lg border border-white/[0.07] bg-transparent text-muted cursor-pointer text-sm flex items-center justify-center transition hover:border-danger hover:text-danger" onclick="closePayment()">✕</button></div>
+    <button class="w-full h-10 rounded-xl border border-accent bg-accent/[0.08] text-accent font-sans text-[13px] font-semibold cursor-pointer flex items-center justify-center gap-1.5 transition hover:bg-accent/[0.18]" id="qrToggleBtn" onclick="toggleQR()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Show QR Code
     </button>
-    <div id="qrWrapper"><div id="payQrCanvas"></div><div class="qr-label">Scan to pay</div></div>
+    <div id="qrWrapper" class="hidden [&.visible]:flex flex-col items-center gap-2"><div id="payQrCanvas" class="bg-white rounded-[10px] p-2"></div><div class="text-[11px] text-muted tracking-wide uppercase">Scan to pay</div></div>
   </div>
 </div>
 
@@ -776,9 +471,11 @@ function catName(id){const c=getCat(id);return c?c.name:'Uncategorized';}
 /* ── Utils ── */
 window.toast=function(msg,type='info'){
   const c=document.getElementById('toastContainer');
-  const clr={success:'var(--accent2)',error:'var(--danger)',info:'var(--accent)'};
+  const clr={success:'#00ff88',error:'#ff4d6d',info:'#00d4ff'};
+  const brd={success:'border-accent2',error:'border-danger',info:'border-accent'};
   const ico={success:'✓',error:'✕',info:'ℹ'};
-  const t=document.createElement('div'); t.className=`toast ${type}`;
+  const t=document.createElement('div');
+  t.className=`toast bg-[rgba(15,20,28,.97)] backdrop-blur-md border ${brd[type]} rounded-xl py-[9px] px-3.5 text-xs text-ink flex items-center gap-1.5 shadow-xl animate-toast-in`;
   t.innerHTML=`<span style="color:${clr[type]}">${ico[type]}</span> ${msg}`;
   c.appendChild(t);
   setTimeout(()=>{t.style.animation='none';t.style.opacity=0;setTimeout(()=>t.remove(),300);},3200);
@@ -939,12 +636,13 @@ async function fetchGeocodeResults(q){
     const box=document.getElementById('geocodeResults');
     box.innerHTML='';
     data.forEach(item=>{
-      const d=document.createElement('div'); d.className='geocode-item';
-      d.innerHTML=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a8 8 0 0 1 8 8c0 5-8 12-8 12S4 15 4 10a8 8 0 0 1 8-8z"/><circle cx="12" cy="10" r="3"/></svg>${item.display_name.substring(0,60)}…`;
+      const d=document.createElement('div');
+      d.className='geocode-item px-3.5 py-2.5 text-[13px] cursor-pointer border-b border-white/[0.07] flex items-center gap-2 transition last:border-b-0 hover:bg-surface2 hover:text-accent';
+      d.innerHTML=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0 text-muted"><path d="M12 2a8 8 0 0 1 8 8c0 5-8 12-8 12S4 15 4 10a8 8 0 0 1 8-8z"/><circle cx="12" cy="10" r="3"/></svg>${item.display_name.substring(0,60)}…`;
       d.onclick=()=>flyToResult(item);
       box.appendChild(d);
     });
-    if(!data.length) box.innerHTML='<div class="geocode-item" style="color:var(--muted)">No results found</div>';
+    if(!data.length) box.innerHTML='<div class="px-3.5 py-2.5 text-[13px] text-muted">No results found</div>';
   }catch(e){console.error(e);}
 }
 
@@ -1039,13 +737,14 @@ window.infoCopyCoords=function(){
 function buildColorPicker(){
   const pop=document.getElementById('colorPickerPopup'); pop.innerHTML='';
   PALETTE.forEach(col=>{
-    const s=document.createElement('div'); s.className='color-swatch-opt'+(col===newCatColor?' sel':'');
+    const s=document.createElement('div');
+    s.className='w-5 h-5 rounded-full cursor-pointer border-2 transition hover:scale-110 '+(col===newCatColor?'border-white scale-110':'border-transparent');
     s.style.background=col;
     s.onclick=()=>{
       newCatColor=col;
       document.getElementById('newCatColorThumb').style.background=col;
-      pop.querySelectorAll('.color-swatch-opt').forEach(x=>x.classList.remove('sel'));
-      s.classList.add('sel');
+      pop.querySelectorAll('div').forEach(x=>{x.classList.remove('border-white','scale-110');x.classList.add('border-transparent');});
+      s.classList.remove('border-transparent');s.classList.add('border-white','scale-110');
       pop.classList.remove('open');
     };
     pop.appendChild(s);
@@ -1057,20 +756,21 @@ window.toggleColorPicker=function(){
 };
 document.addEventListener('click',e=>{
   const pop=document.getElementById('colorPickerPopup');
-  if(pop&&!pop.closest('.color-picker-wrap').contains(e.target)) pop.classList.remove('open');
+  if(pop&&!pop.closest('.relative').contains(e.target)) pop.classList.remove('open');
 });
 
 function buildCatList(){
   const el=document.getElementById('catList'); el.innerHTML='';
-  if(!categories.length){el.innerHTML='<div style="font-size:12px;color:var(--muted);padding:8px">No groups yet. Create one below.</div>';return;}
+  if(!categories.length){el.innerHTML='<div class="text-xs text-muted p-2">No groups yet. Create one below.</div>';return;}
   categories.forEach(cat=>{
     const count=allNodes.filter(n=>n.catId===cat.id).length;
-    const row=document.createElement('div'); row.className='cat-row';
+    const row=document.createElement('div');
+    row.className='flex items-center gap-2 bg-surface2 border border-white/[0.07] rounded-lg py-2 px-2.5 transition hover:border-white/[0.12]';
     row.innerHTML=`
-      <div class="cat-color-swatch" style="background:${cat.color}"></div>
-      <span class="cat-name-lbl">${cat.name}</span>
-      <span class="cat-count-lbl">${count} pts</span>
-      <button class="cat-del-btn" onclick="window.deleteCategory('${cat.id}')" title="Delete group">
+      <div class="w-[18px] h-[18px] rounded-full border-2 border-white/20 flex-shrink-0" style="background:${cat.color}"></div>
+      <span class="flex-1 text-[13px] font-medium text-ink">${cat.name}</span>
+      <span class="font-mono text-[10px] text-muted bg-surface3 rounded-lg px-1.5 py-0.5">${count} pts</span>
+      <button class="w-6 h-6 rounded-md border border-transparent bg-transparent text-muted cursor-pointer flex items-center justify-center transition flex-shrink-0 hover:border-danger hover:text-danger" onclick="window.deleteCategory('${cat.id}')" title="Delete group">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>`;
     el.appendChild(row);
@@ -1083,9 +783,9 @@ function buildGroupFilterBar(){
   if(!categories.length) return;
   categories.forEach(cat=>{
     const btn=document.createElement('button');
-    btn.className='gftab'+(currentGroupFilter===cat.id?' active':'');
+    btn.className='gftab text-[11px] font-semibold py-[3px] px-2.5 rounded-full border border-white/[0.07] bg-transparent cursor-pointer transition whitespace-nowrap flex items-center gap-1.5 flex-shrink-0 hover:not-[.active]:border-white/[0.12] hover:not-[.active]:text-ink'+(currentGroupFilter===cat.id?' active':'');
     btn.style.color=cat.color; if(currentGroupFilter===cat.id) btn.style.borderColor=cat.color;
-    btn.innerHTML=`<span class="cat-dot" style="background:${cat.color}"></span>${cat.name}`;
+    btn.innerHTML=`<span class="inline-block w-2 h-2 rounded-full flex-shrink-0" style="background:${cat.color}"></span>${cat.name}`;
     btn.onclick=()=>setGroupFilter(cat.id,btn);
     bar.appendChild(btn);
   });
@@ -1094,10 +794,10 @@ function buildGroupFilterBar(){
 window.setGroupFilter=function(id,el){
   /* toggle: clicking the already-active group clears the filter back to showing all */
   currentGroupFilter=(currentGroupFilter===id)?'__all__':id;
-  document.querySelectorAll('.gftab').forEach(b=>{b.classList.remove('active');b.style.borderColor='var(--border)';});
+  document.querySelectorAll('.gftab').forEach(b=>{b.classList.remove('active');b.style.borderColor='rgba(255,255,255,.07)';});
   if(currentGroupFilter!=='__all__'){
     el.classList.add('active');
-    el.style.borderColor=el.style.color||'var(--muted2)';
+    el.style.borderColor=el.style.color||'#8899aa';
   }
   applyFilter();
 };
@@ -1128,7 +828,7 @@ window.addCategory=function(){
   categories.push({id,name,color:newCatColor});
   saveCats(); buildCatList(); buildGroupFilterBar(); populateCatSelect();
   document.getElementById('newCatName').value='';
-  msg.style.color='var(--accent2)'; msg.textContent='Group "'+name+'" added!';
+  msg.style.color='#00ff88'; msg.textContent='Group "'+name+'" added!';
   setTimeout(()=>msg.textContent='',2000);
   toast('Group "'+name+'" created','success');
 };
@@ -1187,9 +887,9 @@ class LinkedList{
     document.getElementById("listCount").textContent=nodes.length;
     if(currentFilter==="nearby") document.getElementById("nearbyCount").textContent=nodes.length;
     if(!nodes.length){
-      el.innerHTML=`<div class="empty-state">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        <p>No points found.<br>${currentFilter==='nearby'?'Try increasing the distance.':'Add one or refresh.'}</p>
+      el.innerHTML=`<div class="flex flex-col items-center gap-2.5 py-8 px-4 text-center">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#5a6878" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <p class="text-xs text-muted leading-relaxed">No points found.<br>${currentFilter==='nearby'?'Try increasing the distance.':'Add one or refresh.'}</p>
       </div>`; return;
     }
     nodes.forEach(c=>{
@@ -1197,33 +897,34 @@ class LinkedList{
       const dist=hasLoc?haversine(userLat,userLng,c.lat,c.lng):null;
       let distHtml='';
       if(dist!==null){
-        const pillClass=dist<=2?'':'far';
-        distHtml=`<div class="delivery-dist"><span class="dist-pill ${pillClass}">${fmtDist(dist)}</span></div>`;
+        const pillCls=dist<=2?'bg-accent2':'bg-warn';
+        distHtml=`<div class="flex items-center gap-1.5 text-[11px] text-muted mt-0.5"><span class="font-mono text-[10px] font-bold text-white ${pillCls} rounded px-1.5 py-px">${fmtDist(dist)}</span></div>`;
       }
       const cat=getCat(c.catId);
       const color=cat?cat.color:'#5a6878';
-      const catBadge=cat?`<span class="cat-badge" style="background:${color}20;color:${color};border:1px solid ${color}40">${cat.name}</span>`:'';
-      const card=document.createElement("div"); card.className="delivery-card";
+      const catBadge=cat?`<span class="text-[10px] font-bold py-px px-1.5 rounded-full tracking-wide whitespace-nowrap" style="background:${color}20;color:${color};border:1px solid ${color}40">${cat.name}</span>`:'';
+      const card=document.createElement("div");
+      card.className="delivery-card bg-surface2 border border-white/[0.07] rounded-xl py-2.5 px-3 flex items-center gap-2.5 transition cursor-pointer hover:border-accent/[0.35] hover:translate-x-0.5 hover:bg-surface3";
       card.style.borderLeft=`3px solid ${color}`;
       card.onclick=()=>{map.flyTo([c.lat,c.lng],17,{animate:true,duration:1});showInfoPanel(c.data,c.lat,c.lng,c.catId);};
       card.innerHTML=`
-        <div class="delivery-icon" style="background:${color}15;">
+        <div class="w-[34px] h-[34px] rounded-lg flex items-center justify-center flex-shrink-0" style="background:${color}15;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
         </div>
         <div style="flex:1;min-width:0;">
-          <div class="delivery-name">${c.data}</div>
-          <div style="display:flex;align-items:center;gap:5px;margin-top:3px;flex-wrap:wrap;">
+          <div class="text-[13px] font-medium text-ink whitespace-nowrap overflow-hidden text-ellipsis">${c.data}</div>
+          <div class="flex items-center gap-1.5 mt-[3px] flex-wrap">
             ${catBadge}${distHtml}
           </div>
         </div>
-        <div class="card-actions" onclick="event.stopPropagation()">
-          <button class="icon-btn fly-btn" onclick="map.flyTo([${c.lat},${c.lng}],17,{animate:true,duration:1})" title="Fly to">
+        <div class="flex gap-1.5 flex-shrink-0" onclick="event.stopPropagation()">
+          <button class="w-7 h-7 rounded-lg border border-white/[0.07] bg-transparent cursor-pointer flex items-center justify-center transition text-muted hover:border-accent hover:text-accent" onclick="map.flyTo([${c.lat},${c.lng}],17,{animate:true,duration:1})" title="Fly to">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v3"/><polygon points="9 15 22 8 15 22 12 17 9 15"/></svg>
           </button>
-          <button class="icon-btn route-btn" onclick="window.route(${c.lat},${c.lng})" title="Navigate">
+          <button class="w-7 h-7 rounded-lg border border-white/[0.07] bg-transparent cursor-pointer flex items-center justify-center transition text-muted hover:border-accent2 hover:text-accent2" onclick="window.route(${c.lat},${c.lng})" title="Navigate">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 8 14 12"/><path d="M2 12h16"/></svg>
           </button>
-          <button class="icon-btn del-btn" onclick="window.k('${c.id}')" title="Delete">
+          <button class="w-7 h-7 rounded-lg border border-white/[0.07] bg-transparent cursor-pointer flex items-center justify-center transition text-muted hover:border-danger hover:text-danger" onclick="window.k('${c.id}')" title="Delete">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
           </button>
         </div>`;
@@ -1278,7 +979,7 @@ window.applyFilter=function(){
   if(currentGroupFilter!=='__all__') nodes=nodes.filter(n=>n.catId===currentGroupFilter);
   if(currentFilter==="nearby"){
     if(!userLat||!userLng){
-      document.getElementById("display_items").innerHTML=`<div class="empty-state"><p>Waiting for your location…</p></div>`;
+      document.getElementById("display_items").innerHTML=`<div class="flex flex-col items-center gap-2.5 py-8 px-4 text-center"><p class="text-xs text-muted leading-relaxed">Waiting for your location…</p></div>`;
       document.getElementById("listCount").textContent=0; return;
     }
     nodes=nodes.map(n=>({...n,_dist:haversine(userLat,userLng,n.lat,n.lng)}))
@@ -1356,10 +1057,11 @@ window.route=function(tLat,tLng){
     document.getElementById("sp-time").textContent=mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:mins+"m";
     const sl=document.getElementById("stepsList"); sl.innerHTML="";
     (r.instructions||[]).forEach((step,i)=>{
-      const d=document.createElement("div"); d.className="step-item";
+      const d=document.createElement("div");
+      d.className="flex items-start gap-2.5 py-2 px-3.5 text-xs text-muted2 border-b border-white/[0.07] transition last:border-b-0 hover:bg-surface2";
       const segKm=(step.distance/1000).toFixed(2);
       const txt=step.text||step.type||"Continue";
-      d.innerHTML=`<div class="step-num">${i+1}</div><div><div class="step-text">${txt}</div><div class="step-dist">${segKm} km</div></div>`;
+      d.innerHTML=`<div class="w-5 h-5 rounded-full bg-accent/10 border border-accent/30 flex items-center justify-center text-[9px] font-bold text-accent flex-shrink-0 mt-px">${i+1}</div><div><div class="leading-tight">${txt}</div><div class="font-mono text-[10px] text-muted mt-0.5">${segKm} km</div></div>`;
       sl.appendChild(d);
     });
     document.getElementById("stepsPanel").classList.add("visible");
@@ -1399,7 +1101,7 @@ function startMeasuring(){
   map.getContainer().classList.add("map-measuring");
   map.on("click",onMeasureClick);
   const btn=document.getElementById("measureToggleBtn");
-  btn.className="maction stop"; btn.textContent="■ Stop";
+  btn.classList.add("stop"); btn.textContent="■ Stop";
   document.getElementById("measureHintTxt").innerHTML="<b>Active!</b> Click the map to place points.";
   document.getElementById("measureModal").classList.remove("open");
   document.getElementById("measureFloatBar").style.display="flex";
@@ -1409,7 +1111,7 @@ function stopMeasuring(){
   map.getContainer().classList.remove("map-measuring");
   map.off("click",onMeasureClick);
   const btn=document.getElementById("measureToggleBtn");
-  btn.className="maction start"; btn.textContent="▶ Start";
+  btn.classList.remove("stop"); btn.textContent="▶ Start";
   document.getElementById("measureHintTxt").innerHTML="Press <b>Start</b> then click points on the map.";
   document.getElementById("measureFloatBar").style.display="none";
   document.getElementById("measureModal").classList.add("open");
@@ -1437,8 +1139,9 @@ function onMeasureClick(e){
   const pl=document.getElementById("measurePtsList"); pl.innerHTML="";
   measurePoints.forEach((p,i)=>{
     const segDist=i>0?haversine(measurePoints[i-1][0],measurePoints[i-1][1],p[0],p[1]):null;
-    const d=document.createElement("div"); d.className="mpt"+(i===n-1?" last":"");
-    d.innerHTML=`<span>P${i+1} ${p[0].toFixed(5)}, ${p[1].toFixed(5)}</span>${segDist!==null?`<span class="mpt-seg">+${fmtDist(segDist)}</span>`:''}`;
+    const d=document.createElement("div");
+    d.className="text-[10px] font-mono rounded py-0.5 px-2 flex justify-between "+(i===n-1?"text-accent2 bg-surface2 border border-accent2/25":"text-muted bg-surface2 border border-white/[0.07]");
+    d.innerHTML=`<span>P${i+1} ${p[0].toFixed(5)}, ${p[1].toFixed(5)}</span>${segDist!==null?`<span class="text-accent ml-2">+${fmtDist(segDist)}</span>`:''}`;
     pl.appendChild(d);
   });
   pl.scrollTop=pl.scrollHeight;
@@ -1469,7 +1172,7 @@ window.chintu=function(){
     const data={a:reader.result,b:name,c:amt};
     set(push(ref(db,'user')),data).then(()=>{
       document.getElementById("images").value=""; document.getElementById("names").value=""; document.getElementById("numbers").value="";
-      msg.style.color="var(--accent2)"; msg.textContent="Item uploaded!";
+      msg.style.color="#00ff88"; msg.textContent="Item uploaded!";
       items.add(data);
       setTimeout(()=>{msg.textContent="";closeModal('uploadModal');toast("Item added","success");},1200);
     }).catch(()=>msg.textContent="Upload failed.");
@@ -1491,7 +1194,7 @@ window.delete_btn=function(){
         found=true;
         remove(ref(db,"user/"+child.key)).then(()=>{
           document.getElementById("nam").value=""; document.getElementById("amu").value="";
-          msg.style.color="var(--accent2)"; msg.textContent="Deleted!";
+          msg.style.color="#00ff88"; msg.textContent="Deleted!";
           setTimeout(()=>{msg.textContent="";closeModal('deleteModal');toast("Deleted","success");},1200);
         });
       }
