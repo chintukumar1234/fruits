@@ -869,10 +869,20 @@ window.toggleHeatmap=function(btn){
 };
 
 /* ── Linked List ── */
-class Node{constructor(d,id,lat,lng,catId){this.data=d;this.id=id;this.lat=lat;this.lng=lng;this.catId=catId||'';this.link=null;}}
+class Node{
+  constructor(d,id,lat,lng,catId,b){
+    this.data=d;
+    this.id=id;
+    this.lat=lat;
+    this.lng=lng;
+    this.catId=catId||'';
+    this.link=null;
+    this.b=b;
+  }
+  }
 class LinkedList{
   constructor(){this.head=null;}
-  add(v,id,lat,lng,catId){const n=new Node(v,id,lat,lng,catId);n.link=this.head;this.head=n;}
+  add(v,id,lat,lng,catId,b){const n=new Node(v,id,lat,lng,catId,b);n.link=this.head;this.head=n;}
   del(id){
     if(!this.head)return;
     if(this.head.id===id){this.head=this.head.link;return;}
@@ -913,6 +923,7 @@ class LinkedList{
         </div>
         <div style="flex:1;min-width:0;">
           <div class="text-[13px] font-medium text-ink whitespace-nowrap overflow-hidden text-ellipsis">${c.data}</div>
+          ${c.b?`<div class="text-[11px] text-muted2 whitespace-nowrap overflow-hidden text-ellipsis">${c.b}</div>`:''}
           <div class="flex items-center gap-1.5 mt-[3px] flex-wrap">
             ${catBadge}${distHtml}
           </div>
@@ -942,7 +953,7 @@ function loadData(){
     snapshot.forEach(child=>{
       const d=child.val();
       addMarker(d.a,d.c1,d.c2,child.key,d.cat||'');
-      list.add(d.a,child.key,d.c1,d.c2,d.cat||'');
+      list.add(d.a,child.key,d.c1,d.c2,d.cat||'',d.b||'');
     });
     allNodes=list.toArray(); applyFilter();
     if(heatVisible){
