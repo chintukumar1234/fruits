@@ -282,10 +282,6 @@ footer a { color:var(--green); text-decoration:none; }
   </div>
   <div class="nav-right flex gap-2.5 items-center">
     <button class="icon-btn w-[38px] h-[38px] rounded-full border border-green/25 flex items-center justify-center text-base" onclick="toggleDark()" id="darkToggle" title="Toggle theme">🌙</button>
-    <button class="nav-cart bg-green text-white px-5 py-2.5 rounded-full text-sm font-medium flex items-center gap-1.5" onclick="addtocard()">
-      🛒 <span class="cart-label">Cart</span>
-      <span class="cart-count bg-white/30 rounded-full w-[18px] h-[18px] text-[11px] font-bold flex items-center justify-center" id="cartCount">0</span>
-    </button>
   </div>
 </nav>
 
@@ -404,7 +400,6 @@ const db = firebase.database();
 
 /* ══ STATE ══ */
 let allMembers = [];
-let cartCount  = 0;
 
 /* ══ HELPERS ══ */
 function getInitials(name) {
@@ -642,7 +637,6 @@ function toggleDark() {
 
 /* ══ SHOP / CART BUTTON (nav only — product add-to-cart removed) ══ */
 function goToShop() { window.location.href = 'page1.html'; }
-function addtocard() { showToast('Redirecting to shop…'); }
 
 /* ══ CUSTOM CURSOR ══ */
 const cursor = document.createElement("div");
